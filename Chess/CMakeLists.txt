@@ -5,4 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 
-add_executable(chess_engine src/main.cpp src/chess.cpp)
+add_executable(chess_engine src/main.cpp src/chessBoard.cpp)
+
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
