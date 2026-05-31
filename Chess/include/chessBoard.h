@@ -20,6 +20,11 @@
 
 #define EMPTY 12
 
+#define WHITE 13
+#define BLACK 14
+
+#define DRAW 15
+
 #define getBit(bitboard, square) ((bitboard) & (1ULL << (square)))
 #define setBit(bitboard, square) ((bitboard) |= (1ULL << (square))) 
 #define clearBit(bitboard, square) (getBit(bitboard, square) ? ((bitboard) &= ~(1ULL << (square))) : 0)
@@ -46,33 +51,85 @@ inline const char* squareToString[] =
  "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
  "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
  "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1"
-};
-
- enum{WHITE, BLACK, BOTH};
-
- enum{WKCA = 1, WQCA = 2, BKCA = 4, BQCA = 8};
-
- enum{P, N, B, R, Q, K, p, n, b, r, q, k};
-
+};  
+ 
  inline wchar_t *unicodePieces[12] = {L"\u2659", L"\u2658", L"\u2657", L"\u2656", L"\u2655", L"\u2654",L"\u265F", L"\u265E", L"\u265D", L"\u265C", L"\u265B", L"\u265A"};
 
- inline int char_pieces[128] = {0};     
+ inline int char_pieces[128] = {0};   
+ 
+ struct Move
+ {
+    uint8_t from;
+    uint8_t to;
+
+    uint8_t promotion;
+
+    bool operator== (const Move& other) const 
+    {
+        return from == other.from && to == other.to && promotion == other.promotion;
+    }    
+ };
+
+ struct BoardState
+ {
+    uint64_t bitBoards[12]; // 12 piece types (6 for each color)
+    uint8_t turn; // 0 for white, 1 for black
+    uint64_t enPassantTarget; // Square index for en passant target
+    bool WKC, WQC, BKC, BQC; // castling rights
+    uint8_t halfMoves; // For fifty-move rule
+    uint64_t zobristHash; // For position hashing
+ };
+ 
 
 class ChessBoard 
 {
     public:
         ChessBoard();
+        ~ChessBoard();
         void print(uint64_t bitBoard) const;
+        void printBoard();
         uint8_t getPiece(uint8_t square);
-        void setPiece(uint8_t square, uint8_t piece);
-        uint64_t bitBoards[12]; // 12 piece types (6 for each color)
+        void setPiece(uint8_t square, uint8_t piece); 
+        
+        uint8_t turn();
+        
+        void move(const Move& move);
+        void undoMove();
+
+        uint8_t isTerminal();
+        void pseudoMoves(Move* moves, int& moveCount);
+
+        bool isAttacked(uint8_t square, uint8_t byColor);
+        uint8_t whiteKingSquare();
+        uint8_t blackKingSquare();
+
 
     private:
        
-        uint64_t occupiedSquares[3]; // Bitboard for all occupied squares
-        int sideToMove = -1; // 0 for white, 1 for black
-        int enPassantSquare = no_sq; // Square index for en passant target
-        int castlingRights = 0; // Bitmask for castling rights
+        BoardState* stateStack;
+        int stackIndex;
+
+        // Attck bitBoards
+        uint64_t knightAttacks[64]; 
+        uint64_t kingAttacks[64];
+        uint64_t diagonalRays[64][4]; 
+        uint64_t cardinalRays[64][4];
+
+        //Zobrist hashing
+        uint64_t boardHash[12][64];
+        uint64_t passantHash[64];
+        uint64_t turnHash;
+        uint64_t WKChash;
+        uint64_t WQChash;
+        uint64_t BKChash;
+        uint64_t BQChash;        
+        
+        bool isLegalMove(const Move& move);
+       
+        bool softDraw();
+        uint64_t zobristHash();
 };
+
+
 
 #endif
