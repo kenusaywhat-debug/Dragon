@@ -1,22 +1,22 @@
 #pragma once
 
-#include "chessBoard.h"
+#include "chessboard.h"
 
 class MoveEngine
 {
-    private:
+private:
+	uint64_t nodesSearched;
 
-        uint64_t nodesSearched; // For tracking the number of nodes searched during the minimax algorithm
+	// board evaluation function
+	int evaluate(Chessboard& board);
 
-        int evaluate(ChessBoard& board); 
+	// minimax search function
+	int minimax(Chessboard& board, int depth);
 
-        int minimax(ChessBoard& board, int depth); //, int alpha, int beta, bool maximizingPlayer);
-        
+public:
+	// function to get the best move from a given position
+	Move bestMove(Chessboard& board, int depth);
 
-    public:
-
-        Move bestMove(ChessBoard& board, int depth); 
-
-        uint64_t getNodesSearched();
-    
+	// returns the number of nodes searched during the last bestMove call
+	uint64_t getNodesSearched();
 };

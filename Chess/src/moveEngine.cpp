@@ -1,165 +1,159 @@
 #include "moveEngine.h"
 #include "bitops.h"
-#include <iostream>
-
-
+#include "cstdlib"
 
 using namespace std;
 
-//const int pieceValues[12] = {100, 320, 330, 500, 900, 20000, -100, -320, -330, -500, -900, -20000}; // Basic piece values for evaluation
-const int pieceValues[] = {100, 300, 300, 500, 900, 0, -100, -300, -300, -500, -900, 0, 0}; // Basic piece values for evaluation
+// array of piece values to use for evaluation
+const int pieceValues[] = { 100, 300, 300, 500, 900, 0, -100, -300, -300, -500, -900, 0, 0 };
 
-int MoveEngine::evaluate(ChessBoard& board) 
+// evaluation function
+int MoveEngine::evaluate(Chessboard& board)
 {
-    // This function will implement the evaluation function to assess the current board state and return a score.
-    uint64_t* bitboards = board.getState()->bitBoards;
+	// get the bitboards from the board state
+	uint64_t* bitboards = board.getState()->bitboards;
 
-    int score = 0;
-    for(int i = 0; i < 12; ++i)
-    {
-        score += popcount(bitboards[i]) * pieceValues[i];
-    }
-    return score;
+	// loop through all bitboards and accumulate piece scores
+	int score = 0;
+	for (int i = 0; i < 12; ++i)
+		score += popcount(bitboards[i]) * pieceValues[i];
+
+	// return the score (positive if white is ahead, negative if black is ahead)
+	return score;
 }
 
-Move MoveEngine::bestMove(ChessBoard& board, int depth) 
+// minimax search function
+int MoveEngine::minimax(Chessboard& board, int depth)
 {
-    // This function will implement the search algorithm (e.g., minimax with alpha-beta pruning) to find the best move for the current board state.
-    // For now, it will just return a placeholder move.
+	++nodesSearched;
 
-    nodesSearched = 0; // Reset the node count at the start of the search
+	// check for terminal states
+	int terminal = board.isTerminal();
+	if (terminal)
+	{
+		if (terminal == WHITE) return 1000000 + depth;
+		if (terminal == BLACK) return -1000000 - depth;
+		return 0;
+	}
 
-    if (board.isTerminal()) 
-    {
-        // If the game is over, return a null move or some indication that there are no moves
-        cout << "Terminal position reached. No moves available." << endl;
+	// depth limit
+	if (depth <= 0) return evaluate(board);
 
-        Move fallback = {0, 0, EMPTY}; // Placeholder for no move
-        return fallback;       
-    }
+	// generate moves
+	Move moves[218];
+	int numMoves;
+	board.pseudoMoves(moves, numMoves);
 
-    // Generate moves and evaluate them to find the best move
-    Move moves[256];
-    int moveCount = 0;
-    board.pseudoMoves(moves, moveCount);
+	// determine and return the best score
+	if (board.turn() == WHITE)
+	{
+		// if it is white's turn, try to maximize the score
+		int bestScore = -1000000;
 
-    Move bestMove = moves[0]; // Placeholder for the best move
-    if(board.turn() == WHITE) 
-    {
-        int bestScore = -100000; // Initialize best score for white
-        for(int i = 0; i < moveCount; ++i) 
-        {
-            board.move(moves[i]);
+		// loop through all moves
+		for (int i = 0; i < numMoves; ++i)
+		{
+			board.move(moves[i]);
+			if (!board.isAttacked(board.whiteKingSquare(), BLACK))
+			{
+				// if the move is legal, score it and update best score
+				int score = minimax(board, depth - 1);
+				if (score > bestScore) bestScore = score;
+			}
+			board.undo();
+		}
+		return bestScore;
+	}
+	else
+	{
+		// if it is black's turn, try to minimize the score
+		int bestScore = 1000000;
 
-            if(!board.isAttacked(board.whiteKingSquare(), BLACK)) 
-            {
-                int score = minimax(board, depth - 1); // Call minimax to evaluate the move
-                if(score > bestScore) 
-                {
-                    bestScore = score;
-                    bestMove = moves[i];
-                }
-            }
-           
-            board.undoMove();
-        }
-    } 
-    else 
-    {
-        int bestScore = 100000; // Initialize best score for black
-        for(int i = 0; i < moveCount; ++i) 
-        {
-            board.move(moves[i]);
-            
-            if (!board.isAttacked(board.blackKingSquare(), WHITE)) 
-            {
-                int score = minimax(board, depth - 1); // Call minimax to evaluate the move
-                if(score < bestScore) 
-                {
-                    bestScore = score;
-                    bestMove = moves[i];
-                }
-            }
-            board.undoMove();
-        }
-    }
-
-    cout << "Search complete. Nodes searched: " << nodesSearched << endl;
-    return bestMove;
+		// loop through all moves
+		for (int i = 0; i < numMoves; ++i)
+		{
+			board.move(moves[i]);
+			if (!board.isAttacked(board.blackKingSquare(), WHITE))
+			{
+				// if the move is legal, score it and update best score
+				int score = minimax(board, depth - 1);
+				if (score < bestScore) bestScore = score;
+			}
+			board.undo();
+		}
+		return bestScore;
+	}
 }
 
-int MoveEngine::minimax(ChessBoard& board, int depth) 
+// function to find the best move in a given position
+Move MoveEngine::bestMove(Chessboard& board, int depth)
 {
-    // This function will implement the minimax algorithm with alpha-beta pruning to evaluate the game tree and return the best score for the current board state.
-    // For now, it will just return a placeholder score.
+	nodesSearched = 0;
 
-    ++nodesSearched; // Increment the node count for each call to minimax
+	// if the state is terminal, return a garbage move
+	if (board.isTerminal())
+	{
+		Move fallback = { 0, 0, EMPTY };
+		return fallback;
+	}
 
-    int terminal = board.isTerminal();
+	// generate moves
+	Move moves[218];
+	int numMoves;
+	board.pseudoMoves(moves, numMoves);
 
-    if (depth <= 0) 
-    {
-        return evaluate(board); // Return the evaluation score for the current board state
-    }
+	// find the best move
+	Move bestMove = moves[0];
+	if (board.turn() == WHITE)
+	{
+		// if it is white's turn, try to maximize the score
+		int bestScore = -10000000;
 
-    if(terminal)
-    {
-        if(terminal == WHITE) return 100000 + depth; // White wins
-        else if(terminal == BLACK) return -100000 - depth; // Black wins
-        else return 0; // Draw
-    }
-    
-    Move moves[256];
-    int moveCount;
-    board.pseudoMoves(moves, moveCount);
+		// loop through moves
+		for (int i = 0; i < numMoves; ++i)
+		{
+			board.move(moves[i]);
+			if (!board.isAttacked(board.whiteKingSquare(), BLACK))
+			{
+				// if the move is legal, score it and update bestScore and bestMove
+				int score = minimax(board, depth - 1);
+				if (score > bestScore)
+				{
+					bestScore = score;
+					bestMove = moves[i];
+				}
+			}
+			board.undo();
+		}
+	}
+	else
+	{
+		// if it is black's turn, try to minimize the score
+		int bestScore = 10000000;
 
-    if(board.turn() == WHITE) 
-    {
-        int bestScore = -100000; // Initialize best score for white
+		// loop through moves
+		for (int i = 0; i < numMoves; ++i)
+		{
+			board.move(moves[i]);
+			if (!board.isAttacked(board.blackKingSquare(), WHITE))
+			{
+				// if the move is legal, score it and update bestScore and bestMove
+				int score = minimax(board, depth - 1);
+				if (score < bestScore)
+				{
+					bestScore = score;
+					bestMove = moves[i];
+				}
+			}
+			board.undo();
+		}
+	}
 
-        for (int i = 0; i < moveCount; ++i)
-        {
-            board.move(moves[i]);
-
-            if (!board.isAttacked(board.whiteKingSquare(), BLACK)) 
-            {
-                int score = minimax(board, depth - 1); // Recursive call to minimax
-
-                if (score > bestScore) 
-                {
-                    bestScore = score; // Update best score for white
-                }   
-            }
-            board.undoMove();
-        }        
-        return bestScore;
-    } 
-    else 
-    {
-       int bestScore = 100000; // Initialize best score for black (minimizing player)
-
-        for (int i = 0; i < moveCount; ++i)
-        {
-            board.move(moves[i]);
-
-            if (!board.isAttacked(board.blackKingSquare(), WHITE)) 
-            {
-                int score = minimax(board, depth - 1); // Recursive call to minimax
-
-                if (score < bestScore) 
-                {
-                    bestScore = score; // Update best score for black
-                }   
-            }
-            board.undoMove();
-        }        
-        return bestScore;
-    }
+	// return the move that resulted in the best score
+	return bestMove;
 }
 
-uint64_t MoveEngine::getNodesSearched() 
+uint64_t MoveEngine::getNodesSearched()
 {
-    // This function can be used to track the number of nodes searched during the minimax algorithm
-    // For now, it will return 0 as a placeholder
-    return nodesSearched;
+	return nodesSearched;
 }
