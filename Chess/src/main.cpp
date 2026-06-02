@@ -12,8 +12,6 @@ Chessboard game;
 // global search object to run the engine
 MoveEngine moveEngine;
 
-//This is a test to see is I have the right files now
-
 // global variables for window width and height
 int width = 640;
 int height = 480;
