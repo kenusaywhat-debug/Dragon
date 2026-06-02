@@ -88,8 +88,11 @@ class ChessBoard
         ~ChessBoard();
         void print(uint64_t bitBoard) const;
         void printBoard();
+
         uint8_t getPiece(uint8_t square);
         void setPiece(uint8_t square, uint8_t piece); 
+
+        BoardState* getState();
         
         uint8_t turn();
         
@@ -102,6 +105,10 @@ class ChessBoard
         bool isAttacked(uint8_t square, uint8_t byColor);
         uint8_t whiteKingSquare();
         uint8_t blackKingSquare();
+
+        void setPosition(std::string fen); // Set the board position using a FEN string
+
+        void newGame(); // Reset the board to the initial position
 
 
     private:

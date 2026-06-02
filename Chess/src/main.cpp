@@ -1,18 +1,164 @@
 #include <iostream>
 #include "chessBoard.h"
+#include "moveEngine.h"
 #include <io.h>
 #include <fcntl.h>
-#include <Windows.h>
+//#include <Windows.h>
+#include <sstream>
+
 
 using namespace std;
 
-//ChessBoard game;
+ChessBoard game;
+MoveEngine moveEngine;
+
+void UCI()
+{
+    // Implement the UCI protocol handling logic here
+    // This function will read commands from standard input and respond accordingly
+    // For now, it will just print a message indicating that the UCI protocol is being handled
+    while (true) 
+    {
+        string command = "";
+        getline(cin, command);
+
+        if(command == "uci") 
+        {
+            cout << "id name Dragon" << endl;
+            cout << "id author KendragonX" << endl;
+            cout << "uciok" << endl;
+        } 
+        else if(command.substr(0, 7) == "isready") 
+        {
+            cout << "readyok" << endl;
+        } 
+        else if(command == "ucinewgame") 
+        {
+            game.newGame(); // Reset the game state for a new game
+            //game.printBoard(); // Print the initial board state
+            //cout << "info string New game started" << endl;
+        } 
+        else if(command.substr(0, 8) == "position") 
+        {
+            // Parse the position command and set up the board accordingly
+            // For example, you can handle FEN strings or startpos with moves
+
+            stringstream ss;
+            ss.str(command.substr(9)); // Get the part after "position "
+
+            string posString;
+            string str= "";
+
+            while(ss >> str) 
+            {
+            	if(str == "moves") break;
+                posString += str + " ";
+            }
+
+            if(posString.substr(0, 8) == "startpos") 
+            {
+                game.newGame(); // Set up the initial position
+            } 
+            else if(posString.substr(0, 3) == "fen") 
+            {
+                string fen = posString.substr(4); // Get the FEN string after "fen "
+                game.setPosition(fen); // Set up the board using the FEN string
+            }
+
+            //Making moves from the position command if there are any
+            string movesPart = "";
+            while(ss >> movesPart) 
+            {
+                Move move;
+                int x1 = movesPart[0] - 'a';
+                int y1 = 7 - (movesPart[1] - '1');
+                int x2 = movesPart[2] - 'a';
+                int y2 = 7 - (movesPart[3] - '1');
+
+                move.from = x1 + 8 * y1; // Convert from algebraic to square index
+                move.to = x2 + 8 * y2; // Convert from algebraic to square index
+                move.promotion = EMPTY; // Handle promotion if needed (not implemented here)
+
+                if(movesPart.length() > 4) 
+                {
+                    char promo = movesPart[4];
+                    switch(promo) 
+                    {
+                        case 'q': move.promotion = game.turn() == WHITE ? WHITE_QUEEN : BLACK_QUEEN; break;
+                        case 'r': move.promotion = game.turn() == WHITE ? WHITE_ROOK : BLACK_ROOK; break;
+                        case 'b': move.promotion = game.turn() == WHITE ? WHITE_BISHOP : BLACK_BISHOP; break;
+                        case 'n': move.promotion = game.turn() == WHITE ? WHITE_KNIGHT : BLACK_KNIGHT; break;
+                        default: break;
+                    }
+                }
+                
+                game.move(move); // Make the move on the board
+            }
+        } 
+        else if(command.substr(0, 2) == "go") 
+        {
+            // Parse the go command and start the search for the best move
+            // You can handle different search parameters like depth, time, etc.
+            stringstream ss;
+            ss.str(command.substr(3)); // Get the part after "go "
+            
+            int depth = 1;  // Default depth
+            string token = "" ;
+            while(ss >> token) 
+            {
+                if(token == "depth") 
+                {
+                    ss >> depth; // Get the depth value
+                }
+                // Handle other search parameters like time control if needed
+            }
+
+            //cout << "info string Starting search at depth " << depth << endl;
+
+            Move bestMove = moveEngine.bestMove(game, depth); // Get the best move from the engine
+
+            // Output the best move in UCI format
+            char fromFile = bestMove.from % 8;
+            char fromRank = bestMove.from / 8;
+            char toFile = bestMove.to % 8;
+            char toRank = bestMove.to / 8;
+            
+            string moveString = "";
+            moveString.push_back(fromFile +'a');
+            moveString.push_back('8' - fromRank);
+            moveString.push_back(toFile +'a');
+            moveString.push_back('8' - toRank);
+
+
+            if(bestMove.promotion != EMPTY) 
+            {
+                char promoChar;
+                switch(bestMove.promotion) 
+                {
+                    case WHITE_QUEEN: case BLACK_QUEEN: promoChar = 'q'; break;
+                    case WHITE_ROOK: case BLACK_ROOK: promoChar = 'r'; break;
+                    case WHITE_BISHOP: case BLACK_BISHOP: promoChar = 'b'; break;
+                    case WHITE_KNIGHT: case BLACK_KNIGHT: promoChar = 'n'; break;
+                    default: promoChar = 'q'; break; // Default to queen if something goes wrong
+                }
+                moveString += promoChar; // Append promotion piece to move string
+            }
+            cout << "bestmove " << moveString << endl; // Output the best move
+        }
+        else if(command.substr(0, 4) == "quit") 
+        {
+            exit(0); // Exit the program
+        }
+    }
+}
 
 int main() 
 {
-    ChessBoard board;           
-        
-    board.printBoard(); // Print the entire board with pieces   
-    
+    cout << "Dragon Chess Engine - UCI Protocol Handler" << endl;
+    //game.setPosition("r1bqkbnr/pppppppp/2n5/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"); // Set a test position
+    //game.setPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"); // Set the initial position
+    //game.printBoard(); // Print the board to verify the position is set correctly
+    UCI(); // Start handling UCI commands
+
     return 0;
 }

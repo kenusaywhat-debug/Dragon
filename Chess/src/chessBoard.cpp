@@ -7,6 +7,8 @@
 #include "bitops.h"
 #include <random>
 #include <math.h>
+#include <sstream>
+#include <cstring>
 
 using namespace std;
 
@@ -64,22 +66,7 @@ void ChessBoard::printBoard()
     wcout << "   a b c d e f g h" << endl;
 }
 
-uint8_t ChessBoard::getPiece(uint8_t square) 
-{
-    for (int i = 0; i < 12; ++i) 
-    {
-        uint64_t mask = uint64_t(1) << square;
 
-        for(int i = 0; i < 12; ++i)
-        {
-            if (stateStack[stackIndex].bitBoards[i] & mask)
-            {
-                return i; // Return the piece type index
-            }
-        }
-    }
-    return EMPTY; // No piece on this square
-}
 
 uint64_t ChessBoard::zobristHash() 
 {
@@ -105,6 +92,23 @@ uint64_t ChessBoard::zobristHash()
     return hash;
 }
 
+uint8_t ChessBoard::getPiece(uint8_t square) 
+{
+    for (int i = 0; i < 12; ++i) 
+    {
+        uint64_t mask = uint64_t(1) << square;
+
+        for(int i = 0; i < 12; ++i)
+        {
+            if (stateStack[stackIndex].bitBoards[i] & mask)
+            {
+                return i; // Return the piece type index
+            }
+        }
+    }
+    return EMPTY; // No piece on this square
+}
+
 void ChessBoard::setPiece(uint8_t square, uint8_t piece) 
 {
     
@@ -122,6 +126,11 @@ void ChessBoard::setPiece(uint8_t square, uint8_t piece)
     }   
 }
 
+BoardState* ChessBoard::getState() 
+{
+    return stateStack + stackIndex; // Return a pointer to the current board state
+}
+
 uint8_t ChessBoard::turn() 
 {
     return stateStack[stackIndex].turn;
@@ -132,7 +141,10 @@ void ChessBoard::move(const Move& move)
     // Implement the logic to make a move on the board
     // This should update the bitboards and other state variables accordingly
 
-    stateStack[stackIndex + 1] = stateStack[stackIndex++]; // Push current state to stack before making the move
+    ++stackIndex;
+    memcpy(&stateStack[stackIndex], &stateStack[stackIndex - 1], sizeof(BoardState));
+
+    ++stateStack[stackIndex].halfMoves; // Increment half-move counter for fifty-move rule
 
     uint64_t fromMask = uint64_t(1) << move.from;
     uint64_t toMask = uint64_t(1) << move.to;
@@ -152,11 +164,12 @@ void ChessBoard::move(const Move& move)
 
 
     //caputre logic
-    for(int i = stateStack[stackIndex].turn == WHITE ? 6 : 0; i < (stateStack[stackIndex].turn == WHITE ? 11 : 5); ++i)
+    for(int i = stateStack[stackIndex].turn == WHITE ? 6 : 0; i < (stateStack[stackIndex].turn == WHITE ? 12 : 6); ++i)
     {
         if(stateStack[stackIndex].bitBoards[i] & toMask) 
         {
             stateStack[stackIndex].bitBoards[i] ^= toMask; // Clear the captured piece
+            stateStack[stackIndex].halfMoves = 0; // Reset half-move counter on capture
             break;
         }
     }
@@ -235,7 +248,18 @@ void ChessBoard::move(const Move& move)
     {
         stateStack[stackIndex].bitBoards[movePiece] ^= toMask; // Clear the piece from the to square
         stateStack[stackIndex].bitBoards[move.promotion] |= toMask; // Set the promoted piece on the to square
-    }    
+    } 
+    
+    if (stateStack[stackIndex].turn == WHITE) 
+    {
+        stateStack[stackIndex].turn = BLACK; // Switch turn to black
+    } 
+    else 
+    {
+        stateStack[stackIndex].turn = WHITE; // Switch turn to white
+    }
+
+    stateStack[stackIndex].zobristHash = zobristHash(); // Update the Zobrist hash for the new position
 }
 
 void ChessBoard::undoMove() 
@@ -271,7 +295,7 @@ void ChessBoard::pseudoMoves(Move* moves, int& moveCount)
 
         //pawn moves
         uint64_t bb = (stateStack[stackIndex].bitBoards[WHITE_PAWN] >> 8) & ~board; // Single push
-        uint64_t doublePush = ((stateStack[stackIndex].bitBoards[WHITE_PAWN] >> 16) & ~board) & (0x0000ff0000000000); // Double push from starting position
+        uint64_t doublePush = ((stateStack[stackIndex].bitBoards[WHITE_PAWN] >> 16) & ~board) & (0x000000ff00000000); // Double push from starting position
         uint8_t square;
         while(bb) 
         {
@@ -291,6 +315,7 @@ void ChessBoard::pseudoMoves(Move* moves, int& moveCount)
             }
                        
         }
+        
         while (doublePush)
         {
             square = lsbIndex(doublePush);
@@ -439,7 +464,7 @@ void ChessBoard::pseudoMoves(Move* moves, int& moveCount)
 
         //pawn moves
         uint64_t bb = (stateStack[stackIndex].bitBoards[BLACK_PAWN] << 8) & ~board; // Single push
-        uint64_t doublePush = ((stateStack[stackIndex].bitBoards[BLACK_PAWN] << 16) & ~board) & (0x0000000000ff0000); // Double push from starting position
+        uint64_t doublePush = ((stateStack[stackIndex].bitBoards[BLACK_PAWN] << 16) & ~board) & (0x000000ff00000000); // Double push from starting position
         uint8_t square;
         while(bb) 
         {
@@ -623,24 +648,27 @@ bool ChessBoard::isLegalMove(const Move& move)
 
 bool ChessBoard::isAttacked(uint8_t square, uint8_t byColor) 
 {
+
+    //cout << "Checking if square " << int(square) << " is attacked by " << (byColor == WHITE ? "white" : "black") << endl;
     if(byColor == BLACK) 
     {
         uint64_t board = 0;
-        for (int i = 0; i < 12; ++i) {board |= stateStack[stackIndex].bitBoards[i];} // Get white pieces on the board
+        for (int i = 0; i < 12; ++i) {board |= stateStack[stackIndex].bitBoards[i];} 
 
 
         //Cardinally attacked
         uint64_t attackers = stateStack[stackIndex].bitBoards[BLACK_QUEEN] | stateStack[stackIndex].bitBoards[BLACK_ROOK];
         for(int dir = 0; dir < 4; ++dir) 
         {
-            uint64_t blockers = cardinalRays[square][dir] & board;;
+            uint64_t blockers = cardinalRays[square][dir] & board;
             if(blockers & attackers) 
             {
-                uint64_t blockerIndex;
+                uint8_t blockerIndex = 0;
                 if(dir == 0 || dir == 2) blockerIndex = lsbIndex(blockers);
                 else blockerIndex = msbIndex(blockers);
                 if(attackers & (uint64_t(1) << blockerIndex)) 
                 {
+                    //cout << "Square " << int(square) << " is attacked c by a " << (stateStack[stackIndex].bitBoards[BLACK_QUEEN] & (uint64_t(1) << blockerIndex) ? "bqueen" : "brook") << " on square " << blockerIndex << endl;
                     return true; // Square is attacked by a rook or queen
                 }
             }
@@ -656,18 +684,34 @@ bool ChessBoard::isAttacked(uint8_t square, uint8_t byColor)
 				uint8_t blockerIndex;
 				if (i == 0 || i == 3) blockerIndex = lsbIndex(blockers);
 				else blockerIndex = msbIndex(blockers);
-				if (attackers & (uint64_t(1) << blockerIndex)) return true;
+				if (attackers & (uint64_t(1) << blockerIndex))
+                {
+                    //cout << "Square " << int(square) << " is attacked diagonally by a " << (stateStack[stackIndex].bitBoards[BLACK_QUEEN] & (uint64_t(1) << blockerIndex) ? "black queen" : "black bishop") << " on square " << blockerIndex << endl;
+                     return true; // Square is attacked by a bishop or queen
+                } 
 			}
 		}
 
         // attacked by a knight
-		if (knightAttacks[square] & stateStack[stackIndex].bitBoards[BLACK_KNIGHT]) return true;
+		if (knightAttacks[square] & stateStack[stackIndex].bitBoards[BLACK_KNIGHT]) 
+        {
+            //cout << "Square " << int(square) << " is attacked by a knight on square " << int(lsbIndex(knightAttacks[square] & stateStack[stackIndex].bitBoards[BLACK_KNIGHT])) << endl;
+            return true;
+        }
 
 		// attacked by a pawn
-		if ((((stateStack[stackIndex].bitBoards[BLACK_PAWN] & 0xfefefefefefefefe) << 7) | ((stateStack[stackIndex].bitBoards[BLACK_PAWN] & 0x7f7f7f7f7f7f7f7f) << 9)) & (uint64_t(1) << square)) return true;
-	
+		if ((((stateStack[stackIndex].bitBoards[BLACK_PAWN] & 0xfefefefefefefefe) << 7) | ((stateStack[stackIndex].bitBoards[BLACK_PAWN] & 0x7f7f7f7f7f7f7f7f) << 9)) & (uint64_t(1) << square)) 
+        {
+            //cout << "Square " << int(square) << " is attacked by a pawn on square " << int(lsbIndex((((stateStack[stackIndex].bitBoards[BLACK_PAWN] & 0xfefefefefefefefe) << 7) | ((stateStack[stackIndex].bitBoards[BLACK_PAWN] & 0x7f7f7f7f7f7f7f7f) << 9)) & (uint64_t(1) << square))) << endl;
+            return true;
+        }
+
 		// attacked by a king
-		if (kingAttacks[square] & stateStack[stackIndex].bitBoards[BLACK_KING]) return true;
+		if (kingAttacks[square] & stateStack[stackIndex].bitBoards[BLACK_KING]) 
+        {
+            //cout << "Square " << int(square) << " is attacked by a king on square " << int(lsbIndex(kingAttacks[square] & stateStack[stackIndex].bitBoards[BLACK_KING])) << endl;
+            return true;
+        }
     }
     else if (byColor == WHITE)
 	{
@@ -684,7 +728,11 @@ bool ChessBoard::isAttacked(uint8_t square, uint8_t byColor)
 				uint8_t blockerIndex;
 				if (i == 0 || i == 2) blockerIndex = lsbIndex(blockers);
 				else blockerIndex = msbIndex(blockers);
-				if (attackers & (uint64_t(1) << blockerIndex)) return true;
+				if (attackers & (uint64_t(1) << blockerIndex))
+                { 
+                    //cout << "Square " << int(square) << " is attacked cardinally by a " << (stateStack[stackIndex].bitBoards[WHITE_QUEEN] & (uint64_t(1) << blockerIndex) ? "white queen" : "white rook") << " on square " << blockerIndex << endl;
+                    return true;
+                }
 			}
 		}
 
@@ -698,18 +746,34 @@ bool ChessBoard::isAttacked(uint8_t square, uint8_t byColor)
 				uint8_t blockerIndex;
 				if (i == 0 || i == 3) blockerIndex = lsbIndex(blockers);
 				else blockerIndex = msbIndex(blockers);
-				if (attackers & (uint64_t(1) << blockerIndex)) return true;
+				if (attackers & (uint64_t(1) << blockerIndex))
+                {
+                    //cout << "Square " << int(square) << " is attacked diagonally by a " << (stateStack[stackIndex].bitBoards[WHITE_QUEEN] & (uint64_t(1) << blockerIndex) ? "white queen" : "white bishop") << " on square " << blockerIndex << endl;
+                    return true; // Square is attacked by a bishop or queen
+                } 
 			}
 		}
 
         // attacked by a knight
-		if (knightAttacks[square] & stateStack[stackIndex].bitBoards[WHITE_KNIGHT]) return true;
+		if (knightAttacks[square] & stateStack[stackIndex].bitBoards[WHITE_KNIGHT]) 
+        {
+            //cout << "Square " << int(square) << " is attacked by a knight on square " << int(lsbIndex(knightAttacks[square] & stateStack[stackIndex].bitBoards[WHITE_KNIGHT])) << endl;
+            return true;
+        }
 
 		// attacked by a pawn
-		if ((((stateStack[stackIndex].bitBoards[WHITE_PAWN] & 0xfefefefefefefefe) >> 9) | ((stateStack[stackIndex].bitBoards[WHITE_PAWN] & 0x7f7f7f7f7f7f7f7f) >> 7)) & (uint64_t(1) << square)) return true;
+		if ((((stateStack[stackIndex].bitBoards[WHITE_PAWN] & 0xfefefefefefefefe) >> 9) | ((stateStack[stackIndex].bitBoards[WHITE_PAWN] & 0x7f7f7f7f7f7f7f7f) >> 7)) & (uint64_t(1) << square)) 
+        {
+            //cout << "Square " << int(square) << " is attacked by a pawn on square " << int(lsbIndex((((stateStack[stackIndex].bitBoards[WHITE_PAWN] & 0xfefefefefefefefe) >> 9) | ((stateStack[stackIndex].bitBoards[WHITE_PAWN] & 0x7f7f7f7f7f7f7f7f) >> 7)) & (uint64_t(1) << square))) << endl;
+            return true;
+        }
 
 		// attacked by a king
-		if (kingAttacks[square] & stateStack[stackIndex].bitBoards[WHITE_KING]) return true;
+		if (kingAttacks[square] & stateStack[stackIndex].bitBoards[WHITE_KING]) 
+        {
+            //cout << "Square " << int(square) << " is attacked by a king on square " << int(lsbIndex(kingAttacks[square] & stateStack[stackIndex].bitBoards[WHITE_KING])) << endl;
+            return true;
+        }
 	}
 
 	return false;
@@ -717,12 +781,18 @@ bool ChessBoard::isAttacked(uint8_t square, uint8_t byColor)
 
 uint8_t ChessBoard::whiteKingSquare()
 {
-    return lsbIndex(stateStack[stackIndex].bitBoards[WHITE_KING]);
+    uint64_t kb = stateStack[stackIndex].bitBoards[WHITE_KING];
+    uint8_t sq = lsbIndex(kb);
+    //cout << "WHITE_KING bitboard = 0x" << hex << kb << dec << " at square " << (int)sq << endl;
+    return sq;
 }
 
 uint8_t ChessBoard::blackKingSquare()
 {
-    return lsbIndex(stateStack[stackIndex].bitBoards[BLACK_KING]);
+    uint64_t kb = stateStack[stackIndex].bitBoards[BLACK_KING];
+    uint8_t sq = lsbIndex(kb);
+    //cout << "BLACK_KING bitboard = 0x" << hex << kb << dec << " at square " << (int)sq << endl;
+    return sq;
 }
 
 bool ChessBoard::softDraw()
@@ -765,8 +835,9 @@ uint8_t ChessBoard::isTerminal()
     for(int i = 0; i < moveCount; ++i) 
     {
         this->move(moves[i]);
-        bool illegal = turn() == WHITE ? isAttacked(blackKingSquare(), WHITE) : isAttacked(whiteKingSquare(), BLACK);
+        bool illegal = turn() == BLACK ? isAttacked(whiteKingSquare(), BLACK) : isAttacked(blackKingSquare(), WHITE);
         undoMove();
+
         if (!illegal) return 0; // Found a legal move, so not terminal
     }
 
@@ -778,6 +849,122 @@ uint8_t ChessBoard::isTerminal()
     {
         return isAttacked(blackKingSquare(), WHITE) ? WHITE : DRAW; // Checkmate or stalemate
     }
+}
+
+void ChessBoard::setPosition(std::string fen) 
+{
+    // Implement the logic to set up the board position from a FEN string
+    // This function should parse the FEN string and update the board state accordingly
+    // You can use the newGame() function as a starting point and modify it based on the FEN input
+    stackIndex = 0; // Reset stack index to the initial position
+    // Clear the board
+    for(int i = 0; i < 64; ++i) setPiece(i, EMPTY);
+    stateStack[stackIndex].WKC = false;
+    stateStack[stackIndex].WQC = false; 
+    stateStack[stackIndex].BKC = false; 
+    stateStack[stackIndex].BQC = false;
+    stateStack[stackIndex].enPassantTarget = 0; // No en passant target square by default
+    stateStack[stackIndex].turn = WHITE; // Default to white to move
+
+    stringstream ss;
+    ss.str(fen);
+
+    string boardPart, turnPart, castlingPart, enPassantPart, halfMovePart, fullMovePart;
+    ss >> boardPart >> turnPart >> castlingPart >> enPassantPart >> halfMovePart >> fullMovePart;
+
+
+    // Parse the board part of the FEN
+    int square = 0; // Start from square 0 (matches newGame()'s flipped coordinate system)
+    for (char c : boardPart) 
+    {
+        if (c == '/') 
+        {
+            // Move to the next rank (ranks are placed sequentially in this coordinate system)
+        } 
+        else if (isdigit(c)) 
+        {
+            square += c - '0'; // Skip empty squares
+        } 
+        else 
+        {
+            uint8_t piece = EMPTY;
+            switch (c) 
+            {
+                case 'P': piece = WHITE_PAWN; break;
+                case 'N': piece = WHITE_KNIGHT; break;
+                case 'B': piece = WHITE_BISHOP; break;
+                case 'R': piece = WHITE_ROOK; break;
+                case 'Q': piece = WHITE_QUEEN; break;
+                case 'K': piece = WHITE_KING; break;
+                case 'p': piece = BLACK_PAWN; break;
+                case 'n': piece = BLACK_KNIGHT; break;
+                case 'b': piece = BLACK_BISHOP; break;
+                case 'r': piece = BLACK_ROOK; break;
+                case 'q': piece = BLACK_QUEEN; break;
+                case 'k': piece = BLACK_KING; break;
+            }
+            setPiece(square, piece);
+            square++;
+        }
+    }
+
+    // Parse the turn part of the FEN
+    stateStack[stackIndex].turn = (turnPart == "w") ? WHITE : BLACK;    
+    // Parse the castling rights part of the FEN
+    stateStack[stackIndex].WKC = castlingPart.find('K') != string::npos;
+    stateStack[stackIndex].WQC = castlingPart.find('Q') != string::npos;
+    stateStack[stackIndex].BKC = castlingPart.find('k') != string::npos;
+    stateStack[stackIndex].BQC = castlingPart.find('q') != string::npos;
+
+    // Parse the en passant target square part of the FEN
+    if (enPassantPart != "-") 
+    {
+        int file = enPassantPart[0] - 'a';
+        int rank = enPassantPart[1] - '1';
+        stateStack[stackIndex].enPassantTarget = uint64_t(1) << (file + 8 * rank);
+    } 
+    else 
+    {
+        stateStack[stackIndex].enPassantTarget = 0; // No en passant target square
+    }   
+    // Parse the half-move clock part of the FEN
+    stateStack[stackIndex].halfMoves = stoi(halfMovePart);
+    // The full-move number is not needed for the internal representation, but you can store it if you want
+
+    stateStack[stackIndex].zobristHash = zobristHash(); // Calculate the Zobrist hash for the new position
+}
+
+void ChessBoard::newGame() 
+{
+    memset(stateStack, 0, sizeof(BoardState) * 1000); // Clear the state stack
+    stackIndex = 0; // Reset stack index to the initial position
+
+    // Set up the initial position using bitboards
+    stateStack[0].bitBoards[WHITE_PAWN]   = 0x00ff000000000000;
+    stateStack[0].bitBoards[WHITE_KNIGHT] = 0x4200000000000000;
+    stateStack[0].bitBoards[WHITE_BISHOP] = 0x2400000000000000;
+    stateStack[0].bitBoards[WHITE_ROOK]   = 0x8100000000000000;
+    stateStack[0].bitBoards[WHITE_QUEEN]  = 0x0800000000000000;
+    stateStack[0].bitBoards[WHITE_KING]   = 0x1000000000000000;
+    stateStack[0].bitBoards[BLACK_PAWN]   = 0x000000000000ff00;
+    stateStack[0].bitBoards[BLACK_KNIGHT] = 0x0000000000000024;
+    stateStack[0].bitBoards[BLACK_BISHOP] = 0x0000000000000042;
+    stateStack[0].bitBoards[BLACK_ROOK]   = 0x0000000000000081;
+    stateStack[0].bitBoards[BLACK_QUEEN]  = 0x0000000000000008;
+    stateStack[0].bitBoards[BLACK_KING]   = 0x0000000000000010;
+
+    stateStack[0].WKC = true; 
+    stateStack[0].WQC = true; 
+    stateStack[0].BKC = true; 
+    stateStack[0].BQC = true;
+
+    stateStack[0].enPassantTarget = 0; // No en passant target square in the initial position
+
+    stateStack[0].turn = WHITE; // White to move
+
+    stateStack[0].halfMoves = 0; // Reset half-move clock
+
+    stateStack[0].zobristHash = zobristHash(); // Calculate the Zobrist hash for the initial position
 }
 
 ChessBoard::ChessBoard() 
@@ -803,27 +990,7 @@ ChessBoard::ChessBoard()
     stateStack = new BoardState[1000]; // Allocate memory for 100 board states (for move history)
     stackIndex = 0; // Start at the initial position
 
-    stateStack[0].bitBoards[WHITE_PAWN]   = 0x00ff000000000000;
-    stateStack[0].bitBoards[WHITE_KNIGHT] = 0x4200000000000000;
-    stateStack[0].bitBoards[WHITE_BISHOP] = 0x2400000000000000;
-    stateStack[0].bitBoards[WHITE_ROOK]   = 0x8100000000000000;
-    stateStack[0].bitBoards[WHITE_QUEEN]  = 0x0800000000000000;
-    stateStack[0].bitBoards[WHITE_KING]   = 0x1000000000000000;
-    stateStack[0].bitBoards[BLACK_PAWN]   = 0x000000000000ff00;
-    stateStack[0].bitBoards[BLACK_KNIGHT] = 0x0000000000000024;
-    stateStack[0].bitBoards[BLACK_BISHOP] = 0x0000000000000042;
-    stateStack[0].bitBoards[BLACK_ROOK]   = 0x0000000000000081;
-    stateStack[0].bitBoards[BLACK_QUEEN]  = 0x0000000000000008;
-    stateStack[0].bitBoards[BLACK_KING]   = 0x0000000000000010;
-
-    stateStack[0].WKC = true; 
-    stateStack[0].WQC = true; 
-    stateStack[0].BKC = true; 
-    stateStack[0].BQC = true;
-
-    stateStack[0].enPassantTarget = 0; // No en passant target square in the initial position
-
-    stateStack[0].turn = WHITE; // White to move
+    newGame(); // Set up the initial position
 
     // Generate attack bitboards
     for(int x = 0; x < 8; ++x) 

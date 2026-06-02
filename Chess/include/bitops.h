@@ -49,3 +49,21 @@ inline uint8_t msbIndex(uint64_t x)
 
     #endif
 }
+
+inline int popcount(uint64_t x) 
+{
+    #if defined(_MSC_VER)
+        return static_cast<int>(__popcnt64(x));
+    #elif defined(__GNUC__) || defined(__clang__)
+        return __builtin_popcountll(x);
+    #else
+        // Fallback for compilers without built-in functions
+        int count = 0;
+        while (x) 
+        {
+            x &= (x - 1); // Clear the least significant bit set
+            count++;
+        }
+        return count;
+    #endif
+}
