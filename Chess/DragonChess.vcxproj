@@ -122,11 +122,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bishop.cpp" />
     <ClCompile Include="src\chessBoard.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\moveEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bishop.h" />
     <ClInclude Include="include\bitops.h" />
     <ClInclude Include="include\chessBoard.h" />
     <ClInclude Include="include\moveEngine.h" />

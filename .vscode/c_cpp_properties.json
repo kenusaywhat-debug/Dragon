@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/Chess/packages/nupengl.core.0.1.0.1/build/native/include"
             ],
             "defines": [
                 "_DEBUG",
