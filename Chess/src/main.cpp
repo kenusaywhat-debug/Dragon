@@ -1,5 +1,5 @@
 #include <iostream>
-#include <GL/freeglut.h>
+//#include <GL/freeglut.h>
 #include <sstream>
 #include "chessBoard.h"
 #include "moveEngine.h"
