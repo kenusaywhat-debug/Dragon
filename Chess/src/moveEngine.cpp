@@ -159,50 +159,36 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 
 	// find the best move
 	Move bestMove = scoredMoves[0].move;
-	if (board.turn() == WHITE)
-	{
-		// if it is white's turn, try to maximize the score
-		int bestScore = -10000000;
 
-		// loop through moves
-		for (int i = 0; i < numMoves; ++i)
-		{
-			board.move(scoredMoves[i].move);
-			if (!board.isAttacked(board.whiteKingSquare(), BLACK))
-			{
-				// if the move is legal, score it and update bestScore and bestMove
-				int score = -negamax(board, depth - 1, -beta, -alpha, 0);
-				if (score > bestScore)
-				{
-					bestScore = score;
-					bestMove = scoredMoves[i].move;
-				}
-			}
-			board.undo();
-		}
+	int bestScore = -10000000;
+
+	bool legal;  
+		
+	if (board.turn() == BLACK)
+	{
+		legal = !board.isAttacked(board.whiteKingSquare(), BLACK);
 	}
 	else
 	{
-		// if it is black's turn, try to minimize the score
-		int bestScore = -10000000;
-
-		// loop through moves
-		for (int i = 0; i < numMoves; ++i)
-		{
-			board.move(scoredMoves[i].move);
-			if (!board.isAttacked(board.blackKingSquare(), WHITE))
-			{
-				// if the move is legal, score it and update bestScore and bestMove
-				int score = -negamax(board, depth - 1, -beta, -alpha, 1);
-				if (score > bestScore)
-				{
-					bestScore = score;
-					bestMove = scoredMoves[i].move;
-				}
-			}
-			board.undo();
-		}
+		legal = !board.isAttacked(board.blackKingSquare(), WHITE);
 	}
+
+	// loop through moves
+	for (int i = 0; i < numMoves; ++i)
+	{
+		board.move(scoredMoves[i].move);
+		if (legal)
+		{
+			// if the move is legal, score it and update bestScore and bestMove
+			int score = -negamax(board, depth - 1, -beta, -alpha, 0);
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestMove = scoredMoves[i].move;
+			}
+		}
+		board.undo();
+	}	
 
 	// return the move that resulted in the best score
 	return bestMove;

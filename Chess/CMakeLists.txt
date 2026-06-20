@@ -5,6 +5,6 @@ project(DragonEngine)
 
 include_directories(include)
 
-add_executable(dragon_engineV2.11 src/main.cpp src/chessBoard.cpp src/moveEngine.cpp src/logger.cpp src/PieceSquare.cpp)
+add_executable(dragon_engineV2.12 src/main.cpp src/chessBoard.cpp src/moveEngine.cpp src/logger.cpp src/PieceSquare.cpp)
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
