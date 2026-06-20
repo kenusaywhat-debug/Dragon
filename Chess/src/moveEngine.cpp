@@ -26,7 +26,7 @@ int MoveEngine::evaluate(Chessboard& board)
 	for (int i = 0; i < 12; ++i)
 	{
 		score += popcount(bitboards[i]) * pieceValues[i];	
-		score += PieceSquareTable().getPieceSquareValue(i, lsbIndex(bitboards[i])) * popcount(bitboards[i]);	
+		score += PieceSquareTable().getPieceSquareValue(i, lsbIndex(bitboards[i]));	
 	}		
 
 	// return the score (positive if white is ahead, negative if black is ahead)
@@ -171,7 +171,7 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 	else
 	{
 		// if it is black's turn, try to minimize the score
-		int bestScore = 10000000;
+		int bestScore = -10000000;
 
 		// loop through moves
 		for (int i = 0; i < numMoves; ++i)
@@ -181,7 +181,7 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 			{
 				// if the move is legal, score it and update bestScore and bestMove
 				int score = -negamax(board, depth - 1, -beta, -alpha, 1);
-				if (score < bestScore)
+				if (score > bestScore)
 				{
 					bestScore = score;
 					bestMove = scoredMoves[i].move;
