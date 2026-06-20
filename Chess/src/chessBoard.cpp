@@ -1,4 +1,5 @@
 #include "chessBoard.h"
+#include "moveEngine.h"
 #include "bitops.h"
 #include <math.h>
 #include <iostream>
@@ -837,8 +838,19 @@ Chessboard::Chessboard()
 	// set up initial board state
 	newGame();
 
+	MoveEngine moveEngine;
+
+	Move invalidMove = {0, 0, EMPTY};
+
+	for ( int d = 0; d < MoveEngine::MAX_DEPTH; d++ )
+	{
+		moveEngine.killerMoves[d][0] = invalidMove;
+		moveEngine.killerMoves[d][1] = invalidMove;
+	}
+
 	// generate attack boards
 	for (int x1 = 0; x1 < 8; ++x1)
+	{
 		for (int y1 = 0; y1 < 8; ++y1)
 		{
 			uint8_t squareIndex = x1 + 8 * y1;
@@ -885,6 +897,14 @@ Chessboard::Chessboard()
 			if (x1 > 0) kingAttacks[squareIndex] |= uint64_t(1) << (x1 - 1 + 8 * y1);
 			if (x1 > 0 && y1 > 0) kingAttacks[squareIndex] |= uint64_t(1) << (x1 - 1 + 8 * (y1 - 1));
 		}
+	}
+}
+
+int Chessboard::pieceAt(uint8_t square)
+{
+	for (int i = 0; i < 12; ++i)
+		if (stateStack[stackIndex].bitboards[i] & (uint64_t(1) << square)) return i;
+	return EMPTY;
 }
 
 Chessboard::~Chessboard()

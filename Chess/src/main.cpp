@@ -528,8 +528,8 @@ void UCI()
 
 		if (command == "uci")
 		{
-			cout << "id name Tutorial Engine\n";
-			cout << "id author Polymath Unlimited\n";
+			cout << "id name Dragon Engine\n";
+			cout << "id author KendragonX\n";
 			cout << "uciok\n";
 		}
 		if (command.substr(0, 7) == "isready")
@@ -674,8 +674,10 @@ int main(int argc, char** argv)
 	if (mode == "uci")
 	{
 		cout << "id name Dragon Engine\n";
-		cout << "id author Kendragox\n";
+		cout << "id author KendragonX\n";
 		cout << "uciok\n";
+
+		moveEngine.initMoveEngine();
 
 		UCI();
 	}

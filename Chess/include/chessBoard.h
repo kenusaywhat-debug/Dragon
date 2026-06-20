@@ -58,6 +58,12 @@ struct BoardState
 	std::uint64_t hash;
 };
 
+struct ScoreMove
+{
+	Move move;
+	int score;
+};
+
 class Chessboard
 {
 private:
@@ -79,6 +85,8 @@ private:
 	std::uint64_t WQChash;
 	std::uint64_t BKChash;
 	std::uint64_t BQChash;
+
+	
 
 public:
 	// zobrist hashing function
@@ -114,6 +122,8 @@ public:
 
 	// function to set the board to the initial board state
 	void newGame();
+
+	int pieceAt(std::uint8_t square);
 
 	// default constructor
 	Chessboard();
