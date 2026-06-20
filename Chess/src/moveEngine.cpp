@@ -163,20 +163,21 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 	int bestScore = -10000000;
 
 	bool legal;  
-		
-	if (board.turn() == BLACK)
-	{
-		legal = !board.isAttacked(board.whiteKingSquare(), BLACK);
-	}
-	else
-	{
-		legal = !board.isAttacked(board.blackKingSquare(), WHITE);
-	}
 
 	// loop through moves
 	for (int i = 0; i < numMoves; ++i)
 	{
 		board.move(scoredMoves[i].move);
+
+		if (board.turn() == BLACK)
+		{
+			legal = !board.isAttacked(board.whiteKingSquare(), BLACK);
+		}
+		else
+		{
+			legal = !board.isAttacked(board.blackKingSquare(), WHITE);
+		}
+
 		if (legal)
 		{
 			// if the move is legal, score it and update bestScore and bestMove
