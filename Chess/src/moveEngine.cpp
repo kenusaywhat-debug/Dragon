@@ -18,6 +18,7 @@ bool debugMode = false;
 // evaluation function
 int MoveEngine::evaluate(Chessboard& board)
 {
+	PieceSquareTable pst;
 	// get the bitboards from the board state
 	uint64_t* bitboards = board.getState()->bitboards;
 
@@ -25,8 +26,20 @@ int MoveEngine::evaluate(Chessboard& board)
 	int score = 0;
 	for (int i = 0; i < 12; ++i)
 	{
-		score += popcount(bitboards[i]) * pieceValues[i];	
-		score += PieceSquareTable().getPieceSquareValue(i, lsbIndex(bitboards[i]));	
+		uint64_t piece = bitboards[i];
+
+		while (piece)
+		{
+			int square = lsbIndex(piece);
+			int pstScore = pst.getPieceSquareValue(i, square);
+
+			if (i < 6) 
+				score += pieceValues[i] + pstScore;
+			else 
+				score += pieceValues[i] - pstScore;
+				
+			piece &= piece - 1;
+		}
 	}		
 
 	// return the score (positive if white is ahead, negative if black is ahead)
