@@ -158,7 +158,7 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 			if (!board.isAttacked(board.whiteKingSquare(), BLACK))
 			{
 				// if the move is legal, score it and update bestScore and bestMove
-				int score = negamax(board, depth - 1, alpha, beta, 0);
+				int score = -negamax(board, depth - 1, -beta, -alpha, 0);
 				if (score > bestScore)
 				{
 					bestScore = score;
@@ -180,7 +180,7 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 			if (!board.isAttacked(board.blackKingSquare(), WHITE))
 			{
 				// if the move is legal, score it and update bestScore and bestMove
-				int score = negamax(board, depth - 1, alpha, beta, 1);
+				int score = -negamax(board, depth - 1, -beta, -alpha, 1);
 				if (score < bestScore)
 				{
 					bestScore = score;
