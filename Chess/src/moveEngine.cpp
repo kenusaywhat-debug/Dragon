@@ -195,6 +195,46 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 	return bestMove;
 }
 
+int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
+{
+	++nodesSearched;
+	
+	int standPat = board.turn() == WHITE ? evaluate(board) : -evaluate(board);
+
+	if (standPat >= beta) return beta;
+	if (alpha < standPat) alpha = standPat;
+
+	// generate capture moves
+	Move moves[218];
+	int numMoves = 0;
+	board.pseudoMoves(moves, numMoves);
+
+	for (int i = 0; i < numMoves; ++i)
+	{
+		Move move = moves[i];
+		
+		board.move(move);
+
+		bool legal = board.turn() == BLACK ? !board.isAttacked(board.whiteKingSquare(), BLACK) : !board.isAttacked(board.blackKingSquare(), WHITE);		
+
+		if (legal)
+		{
+			int score = -quiescence(board, -beta, -alpha);
+			board.undo();
+
+			if (score >= beta) return beta;
+			if (score > alpha) alpha = score;
+		}
+		else
+		{
+			board.undo();
+		}
+		
+	}
+
+	return alpha;
+}
+
 uint64_t MoveEngine::getNodesSearched()
 {
 	return nodesSearched;

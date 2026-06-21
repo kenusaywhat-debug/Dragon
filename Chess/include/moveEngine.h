@@ -22,6 +22,8 @@ class MoveEngine
 		bool sameMove(const Move& a, const Move& b);
 
 		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply);
+
+		int quiescence(Chessboard& board, int alpha, int beta);
 		
 	public:
 
