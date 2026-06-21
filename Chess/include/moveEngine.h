@@ -70,7 +70,7 @@ class MoveEngine
 
 		TTEntry* probeTT(uint64_t key);
 
-		void storeTT(uint64_t key, int depth, int store, TTFlag flag, Move bestMove); 
+		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
 		
 	public:
 
