@@ -330,16 +330,22 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 	ScoreMove scoredMoves[218];
 	int numMoves = 0;
 
+	if (board.isTerminal()) return {{0, 0, EMPTY}, 0, nodesSearched};
+
 	generateOrderedMoves(board, scoredMoves, numMoves, 0);
+
+	bool foundLegal = false;
 
 	for (int i = 0; i < numMoves; ++i)
 	{
 		Move move = scoredMoves[i].move;
 
-		board.move(move);
+		board.move(move); 
 
 		if (isMoveLegalAfterMove(board))
 		{
+			foundLegal = true;
+
 			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
 			if (score > bestScore)
 			{
@@ -347,9 +353,14 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 				bestMove = move;
 				alpha = max(alpha, bestScore);
 			}
-		}
+		}		
 		board.undo();
-	}	
+	}
+	
+	if (!foundLegal)
+	{
+		return {{0, 0, EMPTY}, bestScore, nodesSearched};
+	}
 
 	return {bestMove, bestScore, nodesSearched};
 }
