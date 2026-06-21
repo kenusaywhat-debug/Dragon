@@ -45,6 +45,8 @@ class MoveEngine
 		bool isNoisyMove(Chessboard& board, const Move& move);
 		
 		bool shouldStop();
+
+		Move firstLegalMove(Chessboard& board);
 		
 	public:
 

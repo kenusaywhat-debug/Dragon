@@ -317,6 +317,11 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 {
 	Move best = {0, 0, EMPTY};
 
+	if(maxDepth <= 0)
+	{		
+		return firstLegalMove(board);
+	}
+
 	for (int depth = 1; depth <= maxDepth; ++depth)
 	{		
 		SearchResult result = searchRoot(board, depth);
@@ -385,7 +390,7 @@ Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
 	useTimeLimit = true;
 	searchDeadline = chrono::steady_clock::now() + chrono::milliseconds(milliseconds);
 
-	Move best = {0, 0, EMPTY};
+	Move best = firstLegalMove(board);
 
 	for(int depth = 1; depth <= MAX_DEPTH; ++depth )
 	{
@@ -413,4 +418,27 @@ bool MoveEngine::shouldStop()
 	}
 
 	return stopSearch;
+}
+
+Move MoveEngine::firstLegalMove(Chessboard& board)
+{
+	Move moves[218];
+	int numMoves = 0;
+	board.pseudoMoves(moves, numMoves);
+
+	for(int i = 0; i < numMoves; ++i)
+	{
+		Move move = moves[i];
+
+		board.move(move);
+
+		if(isMoveLegalAfterMove(board))
+		{
+			board.undo();
+			return move;
+		}
+		board.undo();
+	}
+
+	return{0, 0, EMPTY};
 }
