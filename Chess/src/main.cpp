@@ -222,7 +222,7 @@ void UCI()
 			int stmScore = moveEngine.staticEval(game);
 			int whiteScore = moveEngine.staticEvalWhite(game);
 
-			cout << "eval white " << whiteScore << " stn " << stmScore << endl;
+			cout << "eval white " << whiteScore << " stm " << stmScore << endl;
 		}
 
 		
