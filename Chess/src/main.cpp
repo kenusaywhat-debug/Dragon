@@ -143,7 +143,7 @@ void UCI()
 				if (token == "depth") ss >> engineDepth;
 
 			// search for the best move
-			Move bestMove = moveEngine.bestMove(game, engineDepth);
+			Move bestMove = moveEngine.iterativeDeepening(game, engineDepth);
 
 			// store the move in a string
 			int x1 = bestMove.from % 8;

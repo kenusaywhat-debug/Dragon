@@ -4,15 +4,16 @@
 
 using namespace std;
 
+struct SearchResult
+{
+	Move move;
+	int score;
+	std::uint64_t nodes;
+};
+
+
 class MoveEngine
 {
-	struct SearchResult
-	{
-		Move move;
-		int score;
-		std::uint64_t nodes;
-	};
-
 	private:
 		std::uint64_t nodesSearched;
 

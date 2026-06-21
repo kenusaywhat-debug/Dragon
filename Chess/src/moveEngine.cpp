@@ -127,50 +127,8 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 // function to find the best move in a given position
 Move MoveEngine::bestMove(Chessboard& board, int depth)
-{
-	nodesSearched = 0;
-
-	int alpha = -10000000;
-	int beta = 10000000;
-
-	// if the state is terminal, return a garbage move
-	if (board.isTerminal())
-	{
-		Move fallback = { 0, 0, EMPTY };
-		return fallback;
-	}
-
-	// generate moves
-	
-	ScoreMove scoredMoves[218];
-	int numMoves;
-	generateOrderedMoves(board, scoredMoves, numMoves, 0);	
-
-	// find the best move
-	Move bestMove = scoredMoves[0].move;
-
-	int bestScore = -10000000;
-	// loop through moves
-	for (int i = 0; i < numMoves; ++i)
-	{
-		board.move(scoredMoves[i].move);
-		
-		if (isMoveLegalAfterMove(board))
-		{
-			// if the move is legal, score it and update bestScore and bestMove
-			int score = -negamax(board, depth - 1, -beta, -alpha, 0);
-			if (score > bestScore)
-			{
-				bestScore = score;
-				bestMove = scoredMoves[i].move;
-				alpha = max(alpha, bestScore);
-			}
-		}
-		board.undo();
-	}	
-
-	// return the move that resulted in the best score
-	return bestMove;
+{	
+	return searchRoot(board, depth).move;
 }
 
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
@@ -349,10 +307,11 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 	Move best = {0, 0, EMPTY};
 
 	for (int depth = 1; depth <= maxDepth; ++depth)
-	{
-		best = bestMove(board, depth);
+	{		
+		SearchResult result = searchRoot(board, depth);
+		best = result.move;
 
-		cout << "Info depth " << depth << " nodes " << getNodesSearched() << " pv " << moveToString(best) << endl;
+		cout << "info depth " << depth << " score cp " << result.score << " nodes " << result.nodes << " pv " << moveToString(result.move) << endl;
 	}
 
 	return best;
