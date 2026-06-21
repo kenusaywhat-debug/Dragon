@@ -20,9 +20,9 @@ class MoveEngine
 
 		int movePly;
 
-		bool stopSearch;
+		bool stopSearch = false;
 
-		bool useTimeLimit;
+		bool useTimeLimit = false;
 
 		chrono::steady_clock::time_point searchDeadline;
 

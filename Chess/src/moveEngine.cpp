@@ -166,19 +166,17 @@ int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
 			int score = -quiescence(board, -beta, -alpha);
 			board.undo();
 
+			if(stopSearch){ return alpha;}
+
 			if (score >= beta) return beta;
 			if (score > alpha) alpha = score;
 		}
 		else
 		{
 			board.undo();
-		}	
-		
-		if(stopSearch)
-		{
-			board.undo();
-			return alpha;
-		}
+			if(stopSearch){ return alpha;}
+
+		}		
 	}
 
 	return alpha;
