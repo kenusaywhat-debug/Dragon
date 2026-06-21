@@ -75,11 +75,15 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 	uint64_t key = board.getState()->hash;
 	int alphaOriginal = alpha;
+
+	Move ttMove = {0, 0, EMPTY};
 		
 	TTEntry* entry = probeTT(key);
 
 	if (entry != nullptr && entry->depth >= depth)
 	{
+		ttMove = entry->bestMove;
+
 		if(entry->flag == TT_EXACT)
 		{
 			return entry->score;
@@ -98,14 +102,12 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			return entry->score;
 		}
 	}
-	
-
 
 	// generate moves
 	ScoreMove scoredMoves[218];
 	int numMoves;
 	
-	generateOrderedMoves(board, scoredMoves, numMoves, ply);
+	generateOrderedMoves(board, scoredMoves, numMoves, ply, ttMove);
 	
 	// if it is white's turn, try to maximize the score
 	int bestScore = -1000000;
@@ -232,18 +234,10 @@ uint64_t MoveEngine::getNodesSearched()
 	return nodesSearched;
 }
 
-int MoveEngine::scoreMove(Chessboard& board, Move move, int ply)
+int MoveEngine::scoreMove(Chessboard& board, Move move, int ply, Move ttMove)
 {
 	int score = 0;
 	//Logger log("scoreMoves2.txt");
-
-	TTEntry* entry = probeTT(board.getState()->hash);
-	Move ttMove = {0, 0, EMPTY};
-
-	if (entry != nullptr)
-	{
-		ttMove = entry->bestMove;
-	}
 
 	if(sameMove(move, ttMove))
 	{
@@ -297,7 +291,7 @@ bool MoveEngine::sameMove(const Move& a, const Move& b)
 	return a.from == b.from && a.to == b.to && a.promotion == b.promotion;
 }
 
-void MoveEngine::generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply)
+void MoveEngine::generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply, Move ttMove)
 {
 	// generate moves
 	Move moves[218];
@@ -307,7 +301,7 @@ void MoveEngine::generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[]
 	for (int i = 0; i < numMoves; ++i)
 	{
 		scoredMoves[i].move = moves[i];
-		scoredMoves[i].score = scoreMove(board, moves[i], ply);
+		scoredMoves[i].score = scoreMove(board, moves[i], ply, ttMove);
 	}
 
 	sort(scoredMoves, scoredMoves + numMoves, [](ScoreMove a, ScoreMove b) { return a.score > b.score; });
@@ -431,7 +425,16 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 
 	if (board.isTerminal()) return {{0, 0, EMPTY}, 0, nodesSearched};
 
-	generateOrderedMoves(board, scoredMoves, numMoves, 0);
+	Move ttMove = {0, 0, EMPTY};
+
+	TTEntry* entry = probeTT(board.getState()->hash);
+
+	if (entry != nullptr)
+	{
+		ttMove = entry->bestMove;
+	}
+
+	generateOrderedMoves(board, scoredMoves, numMoves, 0, ttMove);
 
 	bool foundLegal = false;
 

@@ -52,11 +52,11 @@ class MoveEngine
 		// minimax search function
 		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
 
-		int scoreMove(Chessboard& board, Move move, int ply);
+		int scoreMove(Chessboard& board, Move move, int ply, Move ttMove);
 
 		bool sameMove(const Move& a, const Move& b);
 
-		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply);
+		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply, Move ttMove);
 
 		int quiescence(Chessboard& board, int alpha, int beta);
 
