@@ -64,7 +64,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	// depth limit
 	if (depth <= 0)
 	{
-		return board.turn() == WHITE ? evaluate(board) : -evaluate(board);
+		return quiescence(board, alpha, beta);
 	} 
 
 	//Logger log("scoreMoves2.txt");
@@ -212,8 +212,10 @@ int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
 	for (int i = 0; i < numMoves; ++i)
 	{
 		Move move = moves[i];
+
+		if(board.pieceAt(move.to) == EMPTY && move.promotion == EMPTY){continue;} // skip quiet moves
 		
-		board.move(move);
+		board.move(move);		
 
 		bool legal = board.turn() == BLACK ? !board.isAttacked(board.whiteKingSquare(), BLACK) : !board.isAttacked(board.blackKingSquare(), WHITE);		
 
