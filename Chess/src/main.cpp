@@ -219,8 +219,19 @@ void UCI()
 			}
 
 			// print the move to the console
-			cout << "bestmove " + moveString + "\n";
+
+			if(bestMove.from == 0 && bestMove.to == 0 && bestMove.promotion == EMPTY && game.isTerminal())
+			{
+				cout << "best,ove 0000\n";
+				continue;
+			}
+			else
+			{
+				cout << "bestmove " + moveString + "\n";
+				continue;
+			}
 		}
+			
 		if (command.substr(0, 4) == "quit")
 		{
 			exit(0);
