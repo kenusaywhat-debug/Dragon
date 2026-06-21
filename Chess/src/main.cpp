@@ -255,7 +255,7 @@ void UCI()
 				<< " active " << (moveEngine.isUsingNNUE() ? "nnue" : "classical")
 				<< " white " << activeWhite
 				<< " stm " << activeStm
-				<< "nnueloaded " << (moveEngine.isNNUELoaded() ? true : false)
+				<< " nnueloaded " << (moveEngine.isNNUELoaded() ? true : false)
 				<< endl;
 		}
 		if(command.substr(0, 8) == "loadnnue")
