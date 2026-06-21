@@ -1,5 +1,6 @@
 #include "Perft.h"
 #include "moveEngine.h"
+#include <iostream>
 
 uint64_t Perft::perft(Chessboard& board, int depth)
 {
@@ -36,6 +37,8 @@ uint64_t Perft::perftDivide(Chessboard& board, int depth)
     board.pseudoMoves(moves, numMoves);
 
     uint64_t totalNodes = 0;
+
+    if (depth == 0) cout << "Total Nodes: 1" << endl; return 1;
             
     for (int i = 0; i < numMoves; ++i)
     {
@@ -72,4 +75,27 @@ string Perft::moveToString(const Move& move)
     moveString.push_back(7 + '1' - y2);	
 
     return moveString;
+
+    switch (move.promotion)
+    {
+    case WHITE_QUEEN:
+    case BLACK_QUEEN:
+        moveString.push_back('q');
+        break;
+    case WHITE_ROOK:
+    case BLACK_ROOK:
+        moveString.push_back('r');
+        break;
+    case WHITE_BISHOP:
+    case BLACK_BISHOP:
+        moveString.push_back('b');
+        break;
+    case WHITE_KNIGHT:
+    case BLACK_KNIGHT:
+        moveString.push_back('n');
+        break;
+    case EMPTY:
+    default:
+        break;
+    }
 }
