@@ -213,7 +213,7 @@ void UCI()
 			uint64_t nodes = perftTest.perftDivide(game, depth);
 			cout << "Nodes: " << nodes << endl;
 		}
-		if(command.substr(0, 7) == "cleartall")
+		if(command.substr(0, 8) == "clearall")
 		{
 			moveEngine.newSearchGame();
 		}
