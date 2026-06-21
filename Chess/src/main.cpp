@@ -65,6 +65,7 @@ void UCI()
 		if (command.substr(0, 10) == "ucinewgame")
 		{
 			game.newGame();
+			moveEngine.clearTT();
 		}
 		if (command.substr(0, 8) == "position")
 		{
@@ -212,6 +213,11 @@ void UCI()
 			uint64_t nodes = perftTest.perftDivide(game, depth);
 			cout << "Nodes: " << nodes << endl;
 		}
+		if(command.substr(0, 7) == "cleartt")
+		{
+			moveEngine.clearTT();
+		}
+		
 	}
 }
 

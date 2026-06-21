@@ -429,7 +429,9 @@ void MoveEngine::initMoveEngine()
 	{
 		killerMoves[d][0] = invalidMove;
 		killerMoves[d][1] = invalidMove;
-	}	
+	}
+	
+	clearTT();
 }
 
 bool MoveEngine::isMoveLegalAfterMove(Chessboard& board)
@@ -589,4 +591,13 @@ void MoveEngine::storeTT(uint64_t key, int depth, int score, TTFlag flag, Move b
 MoveEngine::MoveEngine()
 {
 	transpositionTable.resize(TT_SIZE);
+}
+
+void MoveEngine::clearTT()
+{
+	fill(transpositionTable.begin(), transpositionTable.end(), TTEntry{});
+
+	ttHits = 0;
+	ttCuts = 0;
+	ttStores = 0;
 }

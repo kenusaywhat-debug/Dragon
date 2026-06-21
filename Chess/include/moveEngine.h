@@ -107,5 +107,9 @@ class MoveEngine
 
 		uint64_t getTTStores(){return ttStores;}
 
+		void clearTT();
+
 		MoveEngine();
+
+
 };
