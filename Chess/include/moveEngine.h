@@ -109,6 +109,8 @@ class MoveEngine
 
 		void clearTT();
 
+		void newSearchGame();
+
 		MoveEngine();
 
 

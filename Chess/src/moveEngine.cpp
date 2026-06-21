@@ -601,3 +601,16 @@ void MoveEngine::clearTT()
 	ttCuts = 0;
 	ttStores = 0;
 }
+
+void MoveEngine::newSearchGame()
+{
+	clearTT();
+
+	Move invalidMove = {0, 0, EMPTY};
+
+	for(int d = 0; d < MoveEngine::MAX_DEPTH; d++)
+	{
+		killerMoves[d][0] = invalidMove;
+		killerMoves[d][1] = invalidMove;
+	}
+}
