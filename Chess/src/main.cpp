@@ -56,7 +56,17 @@ void UCI()
 		{
 			cout << "id name Dragon Engine\n";
 			cout << "id author KendragonX\n";
+			cout << "option name UseNNUE type check default false\n";
 			cout << "uciok\n";
+		}
+		if (command.substr(0, 9) == "setoption")
+		{
+			if (command.find("UseNNUE") != string::npos)
+			{
+				bool enabled = command.find("true") != string::npos;
+				moveEngine.setUseNNUE(enabled);
+				moveEngine.clearTT();
+			}
 		}
 		if (command.substr(0, 7) == "isready")
 		{
@@ -217,12 +227,35 @@ void UCI()
 		{
 			moveEngine.newSearchGame();
 		}
+		if(command.substr(0, 7) == "usennue")
+		{
+			moveEngine.setUseNNUE(true);
+			moveEngine.clearTT();
+			cout << "info string NNUE enabled\n";
+		}
+		if(command.substr(0, 12) == "useclassical")
+		{
+			moveEngine.setUseNNUE(false);
+			moveEngine.clearTT();
+			cout << "info string classical eval enabled\n";
+		}
 		if(command.substr(0, 4) == "eval")
 		{
-			int stmScore = moveEngine.staticEval(game);
-			int whiteScore = moveEngine.staticEvalWhite(game);
+			int classicalWhite = moveEngine.staticEvalWhite(game);
+			int classicalStm = moveEngine.staticEval(game);
+			int nnueWhite = moveEngine.nnueEvalWhite(game);
+			int nnueStm = moveEngine.nnueEval(game);
+			int activeWhite = moveEngine.currentEvalWhite(game);
+			int activeStm = moveEngine.currentEval(game);
 
-			cout << "eval white " << whiteScore << " stm " << stmScore << endl;
+			cout << "eval classical white " << classicalWhite
+				<< " stm " << classicalStm
+				<< " nnue white " << nnueWhite
+				<< " stm " << nnueStm
+				<< " active " << (moveEngine.isUsingNNUE() ? "nnue" : "classical")
+				<< " white " << activeWhite
+				<< " stm " << activeStm
+				<< endl;
 		}
 
 		
@@ -239,6 +272,7 @@ int main(int argc, char** argv)
 	{
 		cout << "id name Dragon Engine\n";
 		cout << "id author KendragonX\n";
+		cout << "option name UseNNUE type check default false\n";
 		cout << "uciok\n";
 
 		moveEngine.initMoveEngine();

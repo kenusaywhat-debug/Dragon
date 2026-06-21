@@ -53,8 +53,14 @@ class MoveEngine
 
 		uint64_t ttStores = 0;
 
+		bool useNNUE = false;
+
 		// board evaluation function
 		int evaluate(Chessboard& board);
+
+		int evaluateNNUE(Chessboard& board);
+
+		int evaluatePosition(Chessboard& board);
 
 		// minimax search function
 		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
@@ -116,6 +122,18 @@ class MoveEngine
 		int staticEvalWhite(Chessboard& board){ return evaluate(board);}
 
 		MoveEngine();
+
+		void setUseNNUE(bool enabled){ useNNUE = enabled; }
+
+		bool isUsingNNUE(){ return useNNUE; }
+
+		int nnueEval(Chessboard& board);
+
+		int nnueEvalWhite(Chessboard& board){ return evaluateNNUE(board);}
+
+		int currentEval(Chessboard& board);
+
+		int currentEvalWhite(Chessboard& board){ return evaluatePosition(board);}
 
 
 };

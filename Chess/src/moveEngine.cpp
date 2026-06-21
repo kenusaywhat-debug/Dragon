@@ -46,6 +46,17 @@ int MoveEngine::evaluate(Chessboard& board)
 	return score;
 }
 
+int MoveEngine::evaluateNNUE(Chessboard& board)
+{
+	// Temporary NNUE plumbing: use classical eval until a real network is loaded.
+	return evaluate(board);
+}
+
+int MoveEngine::evaluatePosition(Chessboard& board)
+{
+	return useNNUE ? evaluateNNUE(board) : evaluate(board);
+}
+
 // Negamax search function
 int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int ply)
 {
@@ -256,13 +267,13 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth)
 {
 	
-	if (qDepth <= 0){ return board.turn() == WHITE ? evaluate(board) : -evaluate(board);}
+	if (qDepth <= 0){ return board.turn() == WHITE ? evaluatePosition(board) : -evaluatePosition(board);}
 
-	if (shouldStop()){ return board.turn() == WHITE ? evaluate(board) : -evaluate(board);}
+	if (shouldStop()){ return board.turn() == WHITE ? evaluatePosition(board) : -evaluatePosition(board);}
 
 	++nodesSearched;
 	
-	int standPat = board.turn() == WHITE ? evaluate(board) : -evaluate(board);
+	int standPat = board.turn() == WHITE ? evaluatePosition(board) : -evaluatePosition(board);
 
 	if (standPat >= beta) return beta;
 	if (alpha < standPat) alpha = standPat;
@@ -618,6 +629,20 @@ void MoveEngine::newSearchGame()
 int MoveEngine::staticEval(Chessboard& board)
 {
 	int score = evaluate(board);
+
+	return board.turn() == WHITE ? score : -score;
+}
+
+int MoveEngine::nnueEval(Chessboard& board)
+{
+	int score = evaluateNNUE(board);
+
+	return board.turn() == WHITE ? score : -score;
+}
+
+int MoveEngine::currentEval(Chessboard& board)
+{
+	int score = evaluatePosition(board);
 
 	return board.turn() == WHITE ? score : -score;
 }
