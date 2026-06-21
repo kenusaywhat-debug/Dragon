@@ -80,27 +80,30 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		
 	TTEntry* entry = probeTT(key);
 
-	if (entry != nullptr && entry->depth >= depth)
+	if (entry != nullptr )
 	{
 		ttMove = entry->bestMove;
 
-		if(entry->flag == TT_EXACT)
+		if (entry->depth >= depth)
 		{
-			return entry->score;
-		}
-		else if (entry->flag == TT_LOWERBOUND)
-		{
-			alpha = max(alpha, entry->score);
-		}
-		else if (entry->flag == TT_UPPERBOUND)
-		{
-			beta = min(beta, entry->score);
-		}
+			if(entry->flag == TT_EXACT)
+			{
+				return entry->score;
+			}
+			else if (entry->flag == TT_LOWERBOUND)
+			{
+				alpha = max(alpha, entry->score);
+			}
+			else if (entry->flag == TT_UPPERBOUND)
+			{
+				beta = min(beta, entry->score);
+			}
 
-		if (alpha >= beta)
-		{
-			return entry->score;
-		}
+			if (alpha >= beta)
+			{
+				return entry->score;
+			}
+		}		
 	}
 
 	// generate moves
