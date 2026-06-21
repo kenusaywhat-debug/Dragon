@@ -222,7 +222,7 @@ void UCI()
 
 			if(bestMove.from == 0 && bestMove.to == 0 && bestMove.promotion == EMPTY && game.isTerminal())
 			{
-				cout << "best,ove 0000\n";
+				cout << "bestmove 0000\n";
 				continue;
 			}
 			else

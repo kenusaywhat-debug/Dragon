@@ -256,20 +256,43 @@ void MoveEngine::generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[]
 }
 
 string MoveEngine::moveToString(const Move& move)
-{
-	// store the move in a string
-	int x1 = move.from % 8;
-	int y1 = move.from / 8;
-	int x2 = move.to % 8;
-	int y2 = move.to / 8;
+{// store the move in a string
+    int x1 = move.from % 8;
+    int y1 = move.from / 8;
+    int x2 = move.to % 8;
+    int y2 = move.to / 8;
 
-	string moveString = "";
-	moveString.push_back(x1 + 'a');
-	moveString.push_back(7 + '1' - y1);
-	moveString.push_back(x2 + 'a');
-	moveString.push_back(7 + '1' - y2);	
+    string moveString = "";
+    moveString.push_back(x1 + 'a');
+    moveString.push_back(7 + '1' - y1);
+    moveString.push_back(x2 + 'a');
+    moveString.push_back(7 + '1' - y2);	
 
-	return moveString;
+    
+    switch (move.promotion)
+    {
+    case WHITE_QUEEN:
+    case BLACK_QUEEN:
+        moveString.push_back('q');
+        break;
+    case WHITE_ROOK:
+    case BLACK_ROOK:
+        moveString.push_back('r');
+        break;
+    case WHITE_BISHOP:
+    case BLACK_BISHOP:
+        moveString.push_back('b');
+        break;
+    case WHITE_KNIGHT:
+    case BLACK_KNIGHT:
+        moveString.push_back('n');
+        break;
+    case EMPTY:
+    default:
+        break;
+    }
+
+    return moveString;
 }
 
 void MoveEngine::initMoveEngine()
@@ -316,6 +339,8 @@ bool MoveEngine::isNoisyMove(Chessboard& board, const Move& move)
 Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 {
 	Move best = {0, 0, EMPTY};
+
+	stopSearch = false;
 
 	if(maxDepth <= 0)
 	{		
