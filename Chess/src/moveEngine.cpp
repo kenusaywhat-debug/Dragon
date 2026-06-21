@@ -286,7 +286,7 @@ void MoveEngine::generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[]
 	sort(scoredMoves, scoredMoves + numMoves, [](ScoreMove a, ScoreMove b) { return a.score > b.score; });
 }
 
-string MoveEngine::moveToString(Move& move)
+string MoveEngine::moveToString(const Move& move)
 {
 	// store the move in a string
 	int x1 = move.from % 8;
@@ -342,4 +342,55 @@ bool MoveEngine::isNoisyMove(Chessboard& board, const Move& move)
 		((uint64_t(1) << move.to) == board.getState()->passantTarget));
 
 	return isEnPassant;
+}
+
+Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
+{
+	Move best = {0, 0, EMPTY};
+
+	for (int depth = 1; depth <= maxDepth; ++depth)
+	{
+		best = bestMove(board, depth);
+
+		cout << "Info depth " << depth << " nodes " << getNodesSearched() << " pv " << moveToString(best) << endl;
+	}
+
+	return best;
+}
+
+SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
+{
+	nodesSearched = 0;
+
+	int alpha = -10000000;
+	int beta = 10000000;
+	int bestScore = -10000000;
+
+	Move bestMove = {0, 0, EMPTY};
+
+	ScoreMove scoredMoves[218];
+	int numMoves = 0;
+
+	generateOrderedMoves(board, scoredMoves, numMoves, 0);
+
+	for (int i = 0; i < numMoves; ++i)
+	{
+		Move move = scoredMoves[i].move;
+
+		board.move(move);
+
+		if (isMoveLegalAfterMove(board))
+		{
+			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestMove = move;
+				alpha = max(alpha, bestScore);
+			}
+		}
+		board.undo();
+	}	
+
+	return {bestMove, bestScore, nodesSearched};
 }

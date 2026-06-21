@@ -6,8 +6,15 @@ using namespace std;
 
 class MoveEngine
 {
+	struct SearchResult
+	{
+		Move move;
+		int score;
+		std::uint64_t nodes;
+	};
+
 	private:
-		uint64_t nodesSearched;
+		std::uint64_t nodesSearched;
 
 		int movePly;
 
@@ -28,6 +35,8 @@ class MoveEngine
 		bool isMoveLegalAfterMove(Chessboard& board);
 
 		bool isNoisyMove(Chessboard& board, const Move& move);
+
+		
 		
 	public:
 
@@ -41,7 +50,11 @@ class MoveEngine
 		// returns the number of nodes searched during the last bestMove call
 		uint64_t getNodesSearched();
 
-		string moveToString(Move& move);
+		string moveToString(const Move& move);
 
 		void initMoveEngine();
+
+		Move iterativeDeepening(Chessboard& board, int maxDepth);
+
+		SearchResult searchRoot(Chessboard& board, int depth);
 };
