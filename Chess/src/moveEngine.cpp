@@ -163,8 +163,8 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 			{
 				bestScore = score;
 				bestMove = scoredMoves[i].move;
+				alpha = max(alpha, bestScore);
 			}
-			alpha = max(alpha, bestScore);
 		}
 		board.undo();
 	}	
@@ -335,7 +335,7 @@ bool MoveEngine::isNoisyMove(Chessboard& board, const Move& move)
 	}
 
 	uint8_t piece = board.pieceAt(move.from);
-	
+
 	bool isPawn = (piece == WHITE_PAWN || piece == BLACK_PAWN);
 
 	bool isEnPassant = (isPawn && board.getState()->passantTarget && 
