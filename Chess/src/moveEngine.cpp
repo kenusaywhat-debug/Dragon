@@ -49,6 +49,8 @@ int MoveEngine::evaluate(Chessboard& board)
 // Negamax search function
 int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int ply)
 {
+	if(shouldStop()){return 0;}
+
 	++nodesSearched;
 	
 	// check for terminal states
@@ -119,6 +121,10 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		else
 		{
 			board.undo();
+		}
+		if (stopSearch)
+		{
+			return alpha;
 		}			
 	}
 	return bestScore;
@@ -133,6 +139,8 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
 {
+	if (shouldStop()){ return board.turn() == WHITE ? evaluate(board) : -evaluate(board);}
+
 	++nodesSearched;
 	
 	int standPat = board.turn() == WHITE ? evaluate(board) : -evaluate(board);
@@ -164,8 +172,13 @@ int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
 		else
 		{
 			board.undo();
-		}
+		}	
 		
+		if(stopSearch)
+		{
+			board.undo();
+			return alpha;
+		}
 	}
 
 	return alpha;
@@ -347,6 +360,9 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 			foundLegal = true;
 
 			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
+
+			if(stopSearch) {board.undo(); break; }
+
 			if (score > bestScore)
 			{
 				bestScore = score;
@@ -354,7 +370,7 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 				alpha = max(alpha, bestScore);
 			}
 		}		
-		board.undo();
+		board.undo();		
 	}
 	
 	if (!foundLegal)
@@ -363,4 +379,40 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 	}
 
 	return {bestMove, bestScore, nodesSearched};
+}
+
+Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
+{
+	stopSearch = false;
+	useTimeLimit = true;
+	searchDeadline = chrono::steady_clock::now() + chrono::milliseconds(milliseconds);
+
+	Move best = {0, 0, EMPTY};
+
+	for(int depth = 1; depth <= MAX_DEPTH; ++depth )
+	{
+		SearchResult result = searchRoot(board, depth);
+
+		if (stopSearch){break;}
+
+		best = result.move;
+
+		cout << "info depth " << depth << " score cp " << result.score << " nodes "<< result.nodes << " pv " << moveToString(result.move) << endl;
+
+	}
+	useTimeLimit = false;
+	return best;
+}
+
+bool MoveEngine::shouldStop()
+{
+	if (!useTimeLimit) { return false;}
+
+	if (chrono::steady_clock::now() >= searchDeadline)
+	{
+		stopSearch = true;
+		return true;
+	}
+
+	return stopSearch;
 }

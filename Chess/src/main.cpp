@@ -136,14 +136,51 @@ void UCI()
 			stringstream ss;
 			ss.str(command.substr(3));
 
+			Move bestMove;
+			
 			// get search depth
 			int engineDepth = 0;
+			int moveTime= 0;
+			int wtime = 0;
+			int btime = 0;
+			int winc = 0;
+			int binc = 0;
+
 			string token = "";
 			while (ss >> token)
+			{
 				if (token == "depth") ss >> engineDepth;
+				else if (token == "movetime") ss >> moveTime;
+				else if (token == "wtime") ss >> wtime;
+				else if (token == "btime") ss >> btime;
+				else if (token == "winc") ss >> winc;
+				else if (token == "binc") ss >> binc; 
+			}
 
-			// search for the best move
-			Move bestMove = moveEngine.iterativeDeepening(game, engineDepth);
+			int timeForMove = 0;
+
+			if(moveTime > 0)
+			{
+				timeForMove = moveTime;
+			}
+			else
+			{
+				int remaining = game.turn() == WHITE ? wtime : btime;
+				int increment = game.turn() == WHITE ? winc : binc;
+
+				if(remaining > 0){ timeForMove = remaining / 30 + increment /2; }
+			}
+
+			if(timeForMove <= 0)
+			{
+				engineDepth = engineDepth > 0 ? engineDepth : 4;
+				bestMove = moveEngine.iterativeDeepening(game, engineDepth);
+			}
+			else
+			{
+				bestMove = moveEngine.iterativeDeepeningTimed(game, timeForMove);
+			}
+			
 
 			// store the move in a string
 			int x1 = bestMove.from % 8;

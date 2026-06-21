@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chessboard.h"
+#include <chrono>
 
 using namespace std;
 
@@ -19,6 +20,12 @@ class MoveEngine
 
 		int movePly;
 
+		bool stopSearch;
+
+		bool useTimeLimit;
+
+		chrono::steady_clock::time_point searchDeadline;
+
 		// board evaluation function
 		int evaluate(Chessboard& board);
 
@@ -36,8 +43,8 @@ class MoveEngine
 		bool isMoveLegalAfterMove(Chessboard& board);
 
 		bool isNoisyMove(Chessboard& board, const Move& move);
-
 		
+		bool shouldStop();
 		
 	public:
 
@@ -56,6 +63,8 @@ class MoveEngine
 		void initMoveEngine();
 
 		Move iterativeDeepening(Chessboard& board, int maxDepth);
+
+		Move iterativeDeepeningTimed(Chessboard& board, int milliseconds);
 
 		SearchResult searchRoot(Chessboard& board, int depth);
 };
