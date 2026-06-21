@@ -46,6 +46,12 @@ class MoveEngine
 
 		TTEntry transpositionTable[TT_SIZE];
 
+		uint64_t ttHits = 0;
+
+		uint64_t ttCuts = 0;
+
+		uint64_t ttStores = 0;
+
 		// board evaluation function
 		int evaluate(Chessboard& board);
 
@@ -93,4 +99,10 @@ class MoveEngine
 		Move iterativeDeepeningTimed(Chessboard& board, int milliseconds);
 
 		SearchResult searchRoot(Chessboard& board, int depth);
+
+		uint64_t getTTHits(){return ttHits;}
+
+		uint64_t getTTCuts(){return ttCuts;}
+
+		uint64_t getTTStores(){return ttStores;}
 };

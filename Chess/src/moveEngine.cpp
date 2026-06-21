@@ -82,12 +82,14 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 	if (entry != nullptr )
 	{
+		++ttHits;
 		ttMove = entry->bestMove;
 
 		if (entry->depth >= depth)
 		{
 			if(entry->flag == TT_EXACT)
 			{
+				++ttCuts;
 				return entry->score;
 			}
 			else if (entry->flag == TT_LOWERBOUND)
@@ -101,6 +103,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 			if (alpha >= beta)
 			{
+				++ttCuts;
 				return entry->score;
 			}
 		}		
@@ -177,14 +180,77 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	}
 
 	storeTT(key, depth, bestScore, flag, bestMove);
-	return bestScore;
-	
+	return bestScore;	
 }
 
 // function to find the best move in a given position
 Move MoveEngine::bestMove(Chessboard& board, int depth)
 {	
 	return searchRoot(board, depth).move;
+}
+
+SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
+{
+	nodesSearched = 0;
+
+	ttHits = 0;
+	ttCuts = 0;
+	ttStores = 0;
+
+	int alpha = -10000000;
+	int beta = 10000000;
+	int bestScore = -10000000;
+
+	Move bestMove = {0, 0, EMPTY};
+
+	ScoreMove scoredMoves[218];
+	int numMoves = 0;
+
+	if (board.isTerminal()) return {{0, 0, EMPTY}, 0, nodesSearched};
+
+	Move ttMove = {0, 0, EMPTY};
+
+	TTEntry* entry = probeTT(board.getState()->hash);
+
+	if (entry != nullptr)
+	{
+		ttMove = entry->bestMove;
+	}
+
+	generateOrderedMoves(board, scoredMoves, numMoves, 0, ttMove);
+
+	bool foundLegal = false;
+
+	for (int i = 0; i < numMoves; ++i)
+	{
+		Move move = scoredMoves[i].move;
+
+		board.move(move); 
+
+		if (isMoveLegalAfterMove(board))
+		{
+			foundLegal = true;
+
+			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
+
+			if(stopSearch) {board.undo(); break; }
+
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestMove = move;
+				alpha = max(alpha, bestScore);
+			}
+		}		
+		board.undo();		
+	}
+	
+	if (!foundLegal)
+	{
+		return {{0, 0, EMPTY}, bestScore, nodesSearched};
+	}
+
+	return {bestMove, bestScore, nodesSearched};
 }
 
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
@@ -409,70 +475,17 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 		SearchResult result = searchRoot(board, depth);
 		best = result.move;
 
-		cout << "info depth " << depth << " score cp " << result.score << " nodes " << result.nodes << " pv " << moveToString(result.move) << endl;
+		cout << "info depth " << depth
+		<< " score cp " << result.score
+		<< " nodes " << result.nodes
+		<< " tthits " << getTTHits()
+		<< " ttcuts " << getTTCuts()
+		<< " ttstores " << getTTStores()
+		<< " pv " << moveToString(result.move)
+		<< endl;
 	}
 
 	return best;
-}
-
-SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
-{
-	nodesSearched = 0;
-
-	int alpha = -10000000;
-	int beta = 10000000;
-	int bestScore = -10000000;
-
-	Move bestMove = {0, 0, EMPTY};
-
-	ScoreMove scoredMoves[218];
-	int numMoves = 0;
-
-	if (board.isTerminal()) return {{0, 0, EMPTY}, 0, nodesSearched};
-
-	Move ttMove = {0, 0, EMPTY};
-
-	TTEntry* entry = probeTT(board.getState()->hash);
-
-	if (entry != nullptr)
-	{
-		ttMove = entry->bestMove;
-	}
-
-	generateOrderedMoves(board, scoredMoves, numMoves, 0, ttMove);
-
-	bool foundLegal = false;
-
-	for (int i = 0; i < numMoves; ++i)
-	{
-		Move move = scoredMoves[i].move;
-
-		board.move(move); 
-
-		if (isMoveLegalAfterMove(board))
-		{
-			foundLegal = true;
-
-			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
-
-			if(stopSearch) {board.undo(); break; }
-
-			if (score > bestScore)
-			{
-				bestScore = score;
-				bestMove = move;
-				alpha = max(alpha, bestScore);
-			}
-		}		
-		board.undo();		
-	}
-	
-	if (!foundLegal)
-	{
-		return {{0, 0, EMPTY}, bestScore, nodesSearched};
-	}
-
-	return {bestMove, bestScore, nodesSearched};
 }
 
 Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
@@ -491,7 +504,14 @@ Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
 
 		best = result.move;
 
-		cout << "info depth " << depth << " score cp " << result.score << " nodes "<< result.nodes << " pv " << moveToString(result.move) << endl;
+		cout << "info depth " << depth
+		<< " score cp " << result.score
+		<< " nodes " << result.nodes
+		<< " tthits " << getTTHits()
+		<< " ttcuts " << getTTCuts()
+		<< " ttstores " << getTTStores()
+		<< " pv " << moveToString(result.move)
+		<< endl;
 
 	}
 	useTimeLimit = false;
@@ -559,5 +579,6 @@ void MoveEngine::storeTT(uint64_t key, int depth, int score, TTFlag flag, Move b
 		entry.score = score;
 		entry.flag = flag;
 		entry.bestMove = bestMove;
+		++ttStores;
 	}
 }
