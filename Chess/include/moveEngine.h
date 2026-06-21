@@ -2,6 +2,7 @@
 
 #include "chessboard.h"
 #include <chrono>
+#include <vector>
 
 using namespace std;
 
@@ -44,7 +45,7 @@ class MoveEngine
 
 		static const int TT_SIZE = 1 <<20;
 
-		TTEntry transpositionTable[TT_SIZE];
+		vector<TTEntry> transpositionTable;
 
 		uint64_t ttHits = 0;
 
@@ -64,7 +65,7 @@ class MoveEngine
 
 		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply, Move ttMove);
 
-		int quiescence(Chessboard& board, int alpha, int beta);
+		int quiescence(Chessboard& board, int alpha, int beta, int qDepth);
 
 		bool isMoveLegalAfterMove(Chessboard& board);
 
@@ -105,4 +106,6 @@ class MoveEngine
 		uint64_t getTTCuts(){return ttCuts;}
 
 		uint64_t getTTStores(){return ttStores;}
+
+		MoveEngine();
 };

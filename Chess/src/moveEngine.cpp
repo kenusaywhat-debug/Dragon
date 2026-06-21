@@ -68,7 +68,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	// depth limit
 	if (depth <= 0)
 	{
-		return quiescence(board, alpha, beta);
+		return quiescence(board, alpha, beta, 4);
 	} 
 
 	//Logger log("scoreMoves2.txt");
@@ -253,8 +253,11 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 	return {bestMove, bestScore, nodesSearched};
 }
 
-int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
+int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth)
 {
+	
+	if (qDepth <= 0){ return board.turn() == WHITE ? evaluate(board) : -evaluate(board);}
+
 	if (shouldStop()){ return board.turn() == WHITE ? evaluate(board) : -evaluate(board);}
 
 	++nodesSearched;
@@ -279,7 +282,7 @@ int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
 
 		if (isMoveLegalAfterMove(board))
 		{
-			int score = -quiescence(board, -beta, -alpha);
+			int score = -quiescence(board, -beta, -alpha, qDepth -1);
 			board.undo();
 
 			if(stopSearch){ return alpha;}
@@ -581,4 +584,9 @@ void MoveEngine::storeTT(uint64_t key, int depth, int score, TTFlag flag, Move b
 		entry.bestMove = bestMove;
 		++ttStores;
 	}
+}
+
+MoveEngine::MoveEngine()
+{
+	transpositionTable.resize(TT_SIZE);
 }
