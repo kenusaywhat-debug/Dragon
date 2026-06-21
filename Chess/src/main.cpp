@@ -180,43 +180,6 @@ void UCI()
 			{
 				bestMove = moveEngine.iterativeDeepeningTimed(game, timeForMove);
 			}
-			
-
-			// store the move in a string
-			int x1 = bestMove.from % 8;
-			int y1 = bestMove.from / 8;
-			int x2 = bestMove.to % 8;
-			int y2 = bestMove.to / 8;
-
-			string moveString = "";
-			moveString.push_back(x1 + 'a');
-			moveString.push_back(7 + '1' - y1);
-			moveString.push_back(x2 + 'a');
-			moveString.push_back(7 + '1' - y2);
-
-			// handle promotions
-			switch (bestMove.promotion)
-			{
-			case WHITE_QUEEN:
-			case BLACK_QUEEN:
-				moveString.push_back('q');
-				break;
-			case WHITE_ROOK:
-			case BLACK_ROOK:
-				moveString.push_back('r');
-				break;
-			case WHITE_BISHOP:
-			case BLACK_BISHOP:
-				moveString.push_back('b');
-				break;
-			case WHITE_KNIGHT:
-			case BLACK_KNIGHT:
-				moveString.push_back('n');
-				break;
-			case EMPTY:
-			default:
-				break;
-			}
 
 			// print the move to the console
 
@@ -227,6 +190,8 @@ void UCI()
 			}
 			else
 			{
+				// store the move in a string
+				string moveString = moveEngine.moveToString(bestMove);
 				cout << "bestmove " + moveString + "\n";
 				continue;
 			}
