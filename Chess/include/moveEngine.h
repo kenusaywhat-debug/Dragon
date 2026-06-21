@@ -12,6 +12,22 @@ struct SearchResult
 	std::uint64_t nodes;
 };
 
+enum TTFlag
+{
+	TT_EXACT,
+	TT_LOWERBOUND,
+	TT_UPPERBOUND
+
+};
+
+struct TTEntry
+{
+	uint64_t key = 0;
+	int depth = -1;
+	int score = 0;
+	int flag = TT_EXACT;
+	Move bestMove = {0,0,EMPTY};	
+};
 
 class MoveEngine
 {
@@ -25,6 +41,10 @@ class MoveEngine
 		bool useTimeLimit = false;
 
 		chrono::steady_clock::time_point searchDeadline;
+
+		static const int TT_SIZE = 1 <<20;
+
+		TTEntry transpositionTable[TT_SIZE];
 
 		// board evaluation function
 		int evaluate(Chessboard& board);
@@ -47,6 +67,10 @@ class MoveEngine
 		bool shouldStop();
 
 		Move firstLegalMove(Chessboard& board);
+
+		TTEntry* probeTT(uint64_t key);
+
+		void storeTT(uint64_t key, int depth, int store, TTFlag flag, Move bestMove); 
 		
 	public:
 

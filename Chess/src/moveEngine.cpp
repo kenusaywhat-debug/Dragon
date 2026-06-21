@@ -52,6 +52,8 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	if(shouldStop()){return 0;}
 
 	++nodesSearched;
+
+	Move bestMove = {0, 0, EMPTY};
 	
 	// check for terminal states
 	int terminal = board.isTerminal();
@@ -70,14 +72,40 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	} 
 
 	//Logger log("scoreMoves2.txt");
+
+	uint64_t key = board.getState()->hash;
+	int alphaOriginal = alpha;
 		
+	TTEntry* entry = probeTT(key);
+
+	if (entry != nullptr && entry->depth >= depth)
+	{
+		if(entry->flag == TT_EXACT)
+		{
+			return entry->score;
+		}
+		else if (entry->flag == TT_LOWERBOUND)
+		{
+			alpha = max(alpha, entry->score);
+		}
+		else if (entry->flag == TT_UPPERBOUND)
+		{
+			beta = min(beta, entry->score);
+		}
+
+		if (alpha >= beta)
+		{
+			return entry->score;
+		}
+	}
+	
+
 
 	// generate moves
 	ScoreMove scoredMoves[218];
 	int numMoves;
 	
 	generateOrderedMoves(board, scoredMoves, numMoves, ply);
-
 	
 	// if it is white's turn, try to maximize the score
 	int bestScore = -1000000;
@@ -98,8 +126,12 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			//if (score > bestScore) bestScore = score;
 
 			//if(debugMode) log.log("Move: " + moveToString(scoredMoves[i].move) + " Scored: " + to_string(score) + " Depth: " + to_string(depth) + " Nodes: " + to_string(nodesSearched));
-
-			bestScore = max(bestScore, score);
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestMove = move;
+			}
+			
 			alpha = max(alpha, bestScore);					
 			
 			if (beta <= alpha)
@@ -127,6 +159,19 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			return alpha;
 		}			
 	}
+
+	TTFlag flag = TT_EXACT;
+
+	if(bestScore <= alphaOriginal)
+	{
+		flag = TT_UPPERBOUND;
+	}
+	else if(bestScore >= beta)
+	{
+		flag = TT_LOWERBOUND;
+	}
+
+	storeTT(key, depth, bestScore, flag, bestMove);
 	return bestScore;
 	
 }
@@ -466,4 +511,32 @@ Move MoveEngine::firstLegalMove(Chessboard& board)
 	}
 
 	return{0, 0, EMPTY};
+}
+
+TTEntry* MoveEngine::probeTT(uint64_t key)
+{
+	int index = key & (TT_SIZE -1);
+	TTEntry& entry = transpositionTable[index];
+
+	if (entry.key == key)
+	{
+		return &entry;
+	}
+
+	return nullptr;
+}
+
+void MoveEngine::storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove)
+{
+	int index = key & (TT_SIZE -1);
+	TTEntry& entry = transpositionTable[index];
+
+	if (entry.key == 0 || depth >= entry.depth)
+	{
+		entry.key = key;
+		entry.depth = depth;
+		entry.score = score;
+		entry.flag = flag;
+		entry.bestMove = bestMove;
+	}
 }
