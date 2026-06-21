@@ -1,6 +1,4 @@
 #include "moveEngine.h"
-#include "PieceSquare.h"
-#include "bitops.h"
 #include "cstdlib"
 #include "logger.h"
 #include <algorithm>
@@ -8,81 +6,9 @@
 
 using namespace std;
 
-// array of piece values to use for evaluation
-const int pieceValues[] = { 100, 300, 300, 500, 900, 0, -100, -300, -300, -500, -900, 0, 0 };
-
 const int capturePieceValues[] = { 100, 300, 300, 500, 900, 10000, 100, 300, 300, 500, 900, 10000 };
 
 bool debugMode = false;
-
-// evaluation function
-int MoveEngine::evaluate(Chessboard& board)
-{
-	PieceSquareTable pst;
-	// get the bitboards from the board state
-	uint64_t* bitboards = board.getState()->bitboards;
-
-	// loop through all bitboards and accumulate piece scores
-	int score = 0;
-	for (int i = 0; i < 12; ++i)
-	{
-		uint64_t piece = bitboards[i];
-
-		while (piece)
-		{
-			int square = lsbIndex(piece);
-			int pstScore = pst.getPieceSquareValue(i, square);
-
-			if (i < 6) 
-				score += pieceValues[i] + pstScore;
-			else 
-				score += pieceValues[i] - pstScore;
-				
-			piece &= piece - 1;
-		}
-	}		
-
-	// return the score (positive if white is ahead, negative if black is ahead)
-	return score;
-}
-
-int MoveEngine::evaluateNNUE(Chessboard& board)
-{
-	if(!nnue.isLoaded())
-	{
-		return evaluate(board);
-	}
-
-	return nnue.evaluate(board);
-	
-}
-
-bool MoveEngine::loadNNUE(const string& path)
-{
-	bool ok = nnue.load(path);
-
-	if(ok)
-	{
-		clearTT();
-	}
-
-	return ok;
-}
-
-bool MoveEngine::isNNUELoaded()
-{
-	return nnue.isLoaded();
-}
-
-string MoveEngine::getNNUEPath()
-{
-	return nnue.getNetworkPath();
-}
-
-int MoveEngine::evaluatePosition(Chessboard& board)
-{
-	return useNNUE ? evaluateNNUE(board) : evaluate(board);
-}
 
 // Negamax search function
 int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int ply)
@@ -294,13 +220,13 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth)
 {
 	
-	if (qDepth <= 0){ return board.turn() == WHITE ? evaluatePosition(board) : -evaluatePosition(board);}
+	if (qDepth <= 0){ return evaluator.evaluateSTM(board);}
 
-	if (shouldStop()){ return board.turn() == WHITE ? evaluatePosition(board) : -evaluatePosition(board);}
+	if (shouldStop()){ return evaluator.evaluateSTM(board);}
 
 	++nodesSearched;
 	
-	int standPat = board.turn() == WHITE ? evaluatePosition(board) : -evaluatePosition(board);
+	int standPat = evaluator.evaluateSTM(board);
 
 	if (standPat >= beta) return beta;
 	if (alpha < standPat) alpha = standPat;
@@ -655,21 +581,62 @@ void MoveEngine::newSearchGame()
 
 int MoveEngine::staticEval(Chessboard& board)
 {
-	int score = evaluate(board);
+	return evaluator.classicalSTM(board);
+}
 
-	return board.turn() == WHITE ? score : -score;
+int MoveEngine::staticEvalWhite(Chessboard& board)
+{
+	return evaluator.classical(board);
 }
 
 int MoveEngine::nnueEval(Chessboard& board)
 {
-	int score = evaluateNNUE(board);
+	return evaluator.nnueSTM(board);
+}
 
-	return board.turn() == WHITE ? score : -score;
+int MoveEngine::nnueEvalWhite(Chessboard& board)
+{
+	return evaluator.nnueEval(board);
 }
 
 int MoveEngine::currentEval(Chessboard& board)
 {
-	int score = evaluatePosition(board);
+	return evaluator.evaluateSTM(board);
+}
 
-	return board.turn() == WHITE ? score : -score;
+int MoveEngine::currentEvalWhite(Chessboard& board)
+{
+	return evaluator.evaluateWhite(board);
+}
+
+void MoveEngine::setUseNNUE(bool enabled)
+{
+	evaluator.setUseNNUE(enabled);
+}
+
+bool MoveEngine::isUsingNNUE()
+{
+	return evaluator.isUsingNNUE();
+}
+
+bool MoveEngine::loadNNUE(const string& path)
+{
+	bool ok = evaluator.loadNNUE(path);
+
+	if (ok)
+	{
+		clearTT();
+	}
+
+	return ok;
+}
+
+bool MoveEngine::isNNUELoaded()
+{
+	return evaluator.isNNUELoaded();
+}
+
+string MoveEngine::getNNUEPath()
+{
+	return evaluator.getNNUEPath();
 }

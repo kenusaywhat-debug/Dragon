@@ -1,7 +1,7 @@
 #pragma once
 
 #include "chessboard.h"
-#include "NNUE.h"
+#include "Evaluator.h"
 #include <chrono>
 #include <vector>
 
@@ -54,14 +54,7 @@ class MoveEngine
 
 		uint64_t ttStores = 0;
 
-		bool useNNUE = false;
-
-		// board evaluation function
-		int evaluate(Chessboard& board);
-
-		int evaluateNNUE(Chessboard& board);
-
-		int evaluatePosition(Chessboard& board);
+		Evaluator evaluator;
 
 		// minimax search function
 		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
@@ -86,8 +79,6 @@ class MoveEngine
 
 		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
 
-		NNUE nnue;
-		
 	public:
 
 		static const int MAX_DEPTH = 64;
@@ -122,21 +113,21 @@ class MoveEngine
 
 		int staticEval(Chessboard& board);
 
-		int staticEvalWhite(Chessboard& board){ return evaluate(board);}
+		int staticEvalWhite(Chessboard& board);
 
 		MoveEngine();
 
-		void setUseNNUE(bool enabled){ useNNUE = enabled; }
+		void setUseNNUE(bool enabled);
 
-		bool isUsingNNUE(){ return useNNUE; }
+		bool isUsingNNUE();
 
 		int nnueEval(Chessboard& board);
 
-		int nnueEvalWhite(Chessboard& board){ return evaluateNNUE(board);}
+		int nnueEvalWhite(Chessboard& board);
 
 		int currentEval(Chessboard& board);
 
-		int currentEvalWhite(Chessboard& board){ return evaluatePosition(board);}
+		int currentEvalWhite(Chessboard& board);
 
 		bool loadNNUE(const string& path);
 
