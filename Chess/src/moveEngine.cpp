@@ -242,7 +242,9 @@ int MoveEngine::scoreMove(Chessboard& board, Move move, int ply, Move ttMove)
 	int score = 0;
 	//Logger log("scoreMoves2.txt");
 
-	if(sameMove(move, ttMove))
+	bool hasTTMove = !(ttMove.from == 0 && ttMove.to == 0 && ttMove.promotion == EMPTY);
+
+	if(hasTTMove && sameMove(move, ttMove))
 	{
 		score += 30000;
 	}
