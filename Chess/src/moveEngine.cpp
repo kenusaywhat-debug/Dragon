@@ -614,3 +614,10 @@ void MoveEngine::newSearchGame()
 		killerMoves[d][1] = invalidMove;
 	}
 }
+
+int MoveEngine::staticEval(Chessboard& board)
+{
+	int score = evaluate(board);
+
+	return board.turn() == WHITE ? score : -score;
+}

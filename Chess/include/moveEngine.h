@@ -111,6 +111,10 @@ class MoveEngine
 
 		void newSearchGame();
 
+		int staticEval(Chessboard& board);
+
+		int staticEvalWhite(Chessboard& board){ return evaluate(board);}
+
 		MoveEngine();
 
 

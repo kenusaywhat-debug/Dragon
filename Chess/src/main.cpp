@@ -217,6 +217,14 @@ void UCI()
 		{
 			moveEngine.newSearchGame();
 		}
+		if(command.substr(0, 4) == "eval")
+		{
+			int stmScore = moveEngine.staticEval(game);
+			int whiteScore = moveEngine.staticEvalWhite(game);
+
+			cout << "eval white " << whiteScore << " stn " << stmScore << endl;
+		}
+
 		
 	}
 }
