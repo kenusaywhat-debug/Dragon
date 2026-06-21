@@ -1,5 +1,6 @@
 #pragma once
 #include "chessBoard.h"
+#include <stack>
 
 using namespace std;
 

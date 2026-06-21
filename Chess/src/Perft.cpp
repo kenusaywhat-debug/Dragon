@@ -38,7 +38,7 @@ uint64_t Perft::perftDivide(Chessboard& board, int depth)
 
     uint64_t totalNodes = 0;
 
-    if (depth == 0) cout << "Total Nodes: 1" << endl; return 1;
+    if (depth == 0) {cout << "Total Nodes: 1" << endl; return 1;}
             
     for (int i = 0; i < numMoves; ++i)
     {
@@ -74,8 +74,7 @@ string Perft::moveToString(const Move& move)
     moveString.push_back(x2 + 'a');
     moveString.push_back(7 + '1' - y2);	
 
-    return moveString;
-
+    
     switch (move.promotion)
     {
     case WHITE_QUEEN:
@@ -98,4 +97,7 @@ string Perft::moveToString(const Move& move)
     default:
         break;
     }
+
+    return moveString;
+
 }
