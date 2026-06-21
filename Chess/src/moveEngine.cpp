@@ -237,6 +237,19 @@ int MoveEngine::scoreMove(Chessboard& board, Move move, int ply)
 	int score = 0;
 	//Logger log("scoreMoves2.txt");
 
+	TTEntry* entry = probeTT(board.getState()->hash);
+	Move ttMove = {0, 0, EMPTY};
+
+	if (entry != nullptr)
+	{
+		ttMove = entry->bestMove;
+	}
+
+	if(sameMove(move, ttMove))
+	{
+		score += 30000;
+	}
+
 	if(sameMove(move, killerMoves[ply][0]))
 	{
 		score += 9000;
