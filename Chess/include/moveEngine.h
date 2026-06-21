@@ -24,6 +24,10 @@ class MoveEngine
 		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply);
 
 		int quiescence(Chessboard& board, int alpha, int beta);
+
+		bool isMoveLegalAfterMove(Chessboard& board);
+
+		bool isNoisyMove(Chessboard& board, const Move& move);
 		
 	public:
 

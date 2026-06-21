@@ -88,19 +88,8 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		bool isCapture = board.pieceAt(move.to) != EMPTY;
 
 		board.move(move);
-
-		bool legal;  
 		
-		if (board.turn() == BLACK)
-		{
-			legal = !board.isAttacked(board.whiteKingSquare(), BLACK);
-		}
-		else
-		{
-			legal = !board.isAttacked(board.blackKingSquare(), WHITE);
-		}
-
-		if (legal)
+		if (isMoveLegalAfterMove(board))
 		{
 			// if the move is legal, score it and update best score
 			int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
@@ -161,24 +150,12 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 	Move bestMove = scoredMoves[0].move;
 
 	int bestScore = -10000000;
-
-	bool legal;  
-
 	// loop through moves
 	for (int i = 0; i < numMoves; ++i)
 	{
 		board.move(scoredMoves[i].move);
-
-		if (board.turn() == BLACK)
-		{
-			legal = !board.isAttacked(board.whiteKingSquare(), BLACK);
-		}
-		else
-		{
-			legal = !board.isAttacked(board.blackKingSquare(), WHITE);
-		}
-
-		if (legal)
+		
+		if (isMoveLegalAfterMove(board))
 		{
 			// if the move is legal, score it and update bestScore and bestMove
 			int score = -negamax(board, depth - 1, -beta, -alpha, 0);
@@ -213,13 +190,11 @@ int MoveEngine::quiescence(Chessboard& board, int alpha, int beta)
 	{
 		Move move = moves[i];
 
-		if(board.pieceAt(move.to) == EMPTY && move.promotion == EMPTY){continue;} // skip quiet moves
+		if(!isNoisyMove(board, move)){continue;} // skip quiet moves
 		
 		board.move(move);		
 
-		bool legal = board.turn() == BLACK ? !board.isAttacked(board.whiteKingSquare(), BLACK) : !board.isAttacked(board.blackKingSquare(), WHITE);		
-
-		if (legal)
+		if (isMoveLegalAfterMove(board))
 		{
 			int score = -quiescence(board, -beta, -alpha);
 			board.undo();
@@ -336,4 +311,31 @@ void MoveEngine::initMoveEngine()
 		killerMoves[d][0] = invalidMove;
 		killerMoves[d][1] = invalidMove;
 	}	
+}
+
+bool MoveEngine::isMoveLegalAfterMove(Chessboard& board)
+{
+	if (board.turn() == BLACK)
+	{
+		return !board.isAttacked(board.whiteKingSquare(), BLACK);
+	}
+	else
+	{
+		return !board.isAttacked(board.blackKingSquare(), WHITE);
+	}
+}
+
+bool MoveEngine::isNoisyMove(Chessboard& board, const Move& move)
+{
+	// a move is considered noisy if it is a capture or a promotion
+	if (board.pieceAt(move.to) != EMPTY || move.promotion != EMPTY)
+	{
+		return true;
+	}
+
+	uint8_t piece = board.pieceAt(move.from);
+	bool isPawn = (piece == WHITE_PAWN || piece == BLACK_PAWN);
+	bool isEnPassant = (isPawn && board.getState()->passantTarget && ((uint64_t(1) << move.to) == board.getState()->passantTarget));
+
+	return isEnPassant;
 }
