@@ -48,8 +48,35 @@ int MoveEngine::evaluate(Chessboard& board)
 
 int MoveEngine::evaluateNNUE(Chessboard& board)
 {
-	// Temporary NNUE plumbing: use classical eval until a real network is loaded.
-	return evaluate(board);
+	if(!nnue.isLoaded())
+	{
+		return evaluate(board);
+	}
+
+	return nnue.evaluate(board);
+	
+}
+
+bool MoveEngine::loadNNUE(const string& path)
+{
+	bool ok = nnue.load(path);
+
+	if(ok)
+	{
+		clearTT();
+	}
+
+	return ok;
+}
+
+bool MoveEngine::isNNUELoaded()
+{
+	return nnue.isLoaded();
+}
+
+string MoveEngine::getNNUEPath()
+{
+	return nnue.getNetworkPath();
 }
 
 int MoveEngine::evaluatePosition(Chessboard& board)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chessboard.h"
+#include "NNUE.h"
 #include <chrono>
 #include <vector>
 
@@ -84,6 +85,8 @@ class MoveEngine
 		TTEntry* probeTT(uint64_t key);
 
 		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
+
+		NNUE nnue;
 		
 	public:
 
@@ -134,6 +137,12 @@ class MoveEngine
 		int currentEval(Chessboard& board);
 
 		int currentEvalWhite(Chessboard& board){ return evaluatePosition(board);}
+
+		bool loadNNUE(const string& path);
+
+		bool isNNUELoaded();
+
+		string getNNUEPath();
 
 
 };

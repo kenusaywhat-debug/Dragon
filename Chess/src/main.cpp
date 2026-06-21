@@ -255,10 +255,26 @@ void UCI()
 				<< " active " << (moveEngine.isUsingNNUE() ? "nnue" : "classical")
 				<< " white " << activeWhite
 				<< " stm " << activeStm
+				<< "nnueloaded " << (moveEngine.isNNUELoaded() ? true : false)
 				<< endl;
 		}
+		if(command.substr(0, 8) == "loadnnue")
+		{
+			stringstream ss;
+			ss.str(command.substr(9));
 
-		
+			string path = "";
+			ss>>path;
+
+			if(moveEngine.loadNNUE(path))
+			{
+				cout<< "info string NNUE loaded " << path << endl;
+			}
+			else
+			{
+				cout << " info string NNUE load failed " << path  << endl;
+			}
+		}		
 	}
 }
 
