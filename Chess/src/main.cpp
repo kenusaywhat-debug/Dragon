@@ -272,7 +272,7 @@ void UCI()
 			}
 			else
 			{
-				cout << " info string NNUE load failed " << path  << endl;
+				cout << "info string NNUE load failed " << path  << endl;
 			}
 		}		
 	}
