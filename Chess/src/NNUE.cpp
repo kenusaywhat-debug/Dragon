@@ -1,15 +1,7 @@
 #include "NNUE.h"
-#include "PieceSquare.h"
 #include "bitops.h"
 #include <fstream>
 #include <algorithm>
-
-// const int nnuePieceValues[] =
-// {
-//     100, 300, 300, 500, 900, 0,
-//     -100, -300, -300, -500, -900,
-//     0, 0
-// };
 
 NNUE::NNUE()
 {
@@ -98,7 +90,7 @@ int NNUE::evaluate(Chessboard& board)
 
     for(int piece = 0; piece < 12; ++piece)
     {
-        uint64_t pieces = bitboards[pieces];
+        uint64_t pieces = bitboards[piece];
 
         while (pieces)
         {
@@ -118,7 +110,7 @@ int NNUE::evaluate(Chessboard& board)
 
     for(int h = 0; h < HIDDEN_SIZE; ++h)
     {
-        int32_t activated = clamp(hidden[h], 0, 255);
+        int32_t activated = std::clamp(hidden[h], 0, 255);
         score += activated * outputWeights[h];
     }
 

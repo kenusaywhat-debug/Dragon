@@ -22,7 +22,7 @@ class NNUE
         vector<int16_t> outputWeights;
         int32_t outputBias = 0;
 
-        int featureIndex(int poece, int square) const;
+        int featureIndex(int piece, int square) const;
 
     public:
         NNUE();
