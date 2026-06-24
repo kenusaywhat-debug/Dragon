@@ -35,7 +35,7 @@ uint64_t Perft::perftDivide(Chessboard& board, int depth)
     int numMoves = 0;
 
     board.pseudoMoves(moves, numMoves);
-
+        
     uint64_t totalNodes = 0;
 
     if (depth == 0) {cout << "Total Nodes: 1" << endl; return 1;}

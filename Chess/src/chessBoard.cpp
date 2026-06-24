@@ -61,7 +61,8 @@ uint8_t Chessboard::turn()
 void Chessboard::move(const Move& move)
 {
 	// push a new state onto the state stack
-	stateStack[stackIndex + 1] = stateStack[stackIndex++];
+	stateStack[stackIndex + 1] = stateStack[stackIndex];
+	++stackIndex;
 
 	// increment the half-move counter
 	++stateStack[stackIndex].halfMoves;
