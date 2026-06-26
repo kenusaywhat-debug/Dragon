@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+Chess/src/lichess_big3_classical_training_data.txt
+Chess/src/lichess_big3_classical_training_data.txt
+Chess/src/lichess_big3_training_data.txt
+Chess/src/*training_data*.txt
+*.dnnue

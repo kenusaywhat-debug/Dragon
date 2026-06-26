@@ -258,6 +258,10 @@ void UCI()
 				<< " nnueloaded " << (moveEngine.isNNUELoaded() ? true : false)
 				<< endl;
 		}
+		if(command.substr(0, 9) == "traineval")
+		{
+			cout << "traineval " << moveEngine.staticEvalWhite(game) << endl;
+		}		
 		if(command.substr(0, 8) == "loadnnue")
 		{
 			stringstream ss;
@@ -274,7 +278,8 @@ void UCI()
 			{
 				cout << "info string NNUE load failed " << path  << endl;
 			}
-		}		
+		}
+
 	}
 }
 
