@@ -115,6 +115,6 @@ def train():
 
         print("epoch", epoch + 1, "avg_error", total_error // max(1, len(data)))
 
-    save_network("tiny_trained.dnnue", input_weights, hidden_bias, output_weights, output_bias)
+    save_network("tiny_classical.dnnue", input_weights, hidden_bias, output_weights, output_bias)
 
 train()
