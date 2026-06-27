@@ -164,34 +164,34 @@ def train():
             error = target - prediction
             total_error += abs(error)
 
-        output_learning_rate = 0.000005
-        input_learning_rate = 0.000001
-        bias_learning_rate = 0.000005
+            output_learning_rate = 0.000005
+            input_learning_rate = 0.000001
+            bias_learning_rate = 0.000005
 
-        old_output_weights = output_weights[:]
+            old_output_weights = output_weights[:]
 
-        for h in range(HIDDEN_SIZE):
-            if activated[h] <= 0 or activated[h] >= 255:
-                continue
+            for h in range(HIDDEN_SIZE):
+                if activated[h] <= 0 or activated[h] >= 255:
+                    continue
 
-            output_delta = round(output_learning_rate * error * activated[h])
-            output_weights[h] += output_delta
-            output_weights[h] = clamp(output_weights[h], -32768, 32767)
+                output_delta = round(output_learning_rate * error * activated[h])
+                output_weights[h] += output_delta
+                output_weights[h] = clamp(output_weights[h], -32768, 32767)
 
-            hidden_error = error * old_output_weights[h]
+                hidden_error = error * old_output_weights[h]
 
-            input_delta = round(input_learning_rate * hidden_error)
+                input_delta = round(input_learning_rate * hidden_error)
 
-            if input_delta == 0:
-                continue
+                if input_delta == 0:
+                    continue
 
-            for feature in features:
-                index = feature * HIDDEN_SIZE + h
-                input_weights[index] += input_delta
-                input_weights[index] = clamp(input_weights[index], -32768, 32767)
+                for feature in features:
+                    index = feature * HIDDEN_SIZE + h
+                    input_weights[index] += input_delta
+                    input_weights[index] = clamp(input_weights[index], -32768, 32767)
 
-        output_bias += round(bias_learning_rate * error * SCALE)
-        output_bias = clamp(output_bias, -2000000, 2000000)   
+                output_bias += round(bias_learning_rate * error * SCALE)
+                output_bias = clamp(output_bias, -2000000, 2000000)   
 
         train_error = total_error // max(1, len(train_data))
 
