@@ -110,18 +110,49 @@ def load_data(path):
 
     return data
 
+def average_error(data, input_weights, hidden_bias, output_weights, output_bias):
+    total_error = 0
+
+    for features, target in data:
+        prediction, hidden, activated = forward(
+            features,
+            input_weights,
+            hidden_bias,
+            output_weights,
+            output_bias
+        )
+
+        total_error += abs(target - prediction)
+
+    return total_error // max(1, len(data))
+
 def train():
     data = load_data("lichess_big3_classical_training_data.txt")
+    random.shuffle(data)
+
+    split = int(len(data) * 0.9)
+    train_data = data[:split]
+    validation_data = data[split:]
 
     input_weights, hidden_bias, output_weights, output_bias = load_network("../tiny_classical.dnnue")
+
+    best_error = average_error(
+        validation_data,
+        input_weights,
+        hidden_bias,
+        output_weights,
+        output_bias
+    )
+
+    print("baseline validation_error", best_error)
 
     epochs = 5
 
     for epoch in range(epochs):
-        random.shuffle(data)
+        random.shuffle(train_data)
         total_error = 0
 
-        for features, target in data:
+        for features, target in train_data:
             prediction, hidden, activated = forward(
                 features,
                 input_weights,
@@ -141,8 +172,31 @@ def train():
 
             output_bias += step * SCALE
 
-        print("epoch", epoch + 1, "avg_error", total_error // max(1, len(data)))
+        train_error = total_error // max(1, len(train_data))
 
-    save_network("tiny_trained.dnnue", input_weights, hidden_bias, output_weights, output_bias)
+        validation_error = average_error(
+            validation_data,
+            input_weights,
+            hidden_bias,
+            output_weights,
+            output_bias
+        )
+
+        if validation_error < best_error:
+            best_error = validation_error
+            save_network("tiny_trained.dnnue", input_weights, hidden_bias, output_weights, output_bias)
+            print(
+                "epoch", epoch + 1,
+                "train_error", train_error,
+                "validation_error", validation_error,
+                "saved"
+            )
+        else:
+            print(
+                "epoch", epoch + 1,
+                "train_error", train_error,
+                "validation_error", validation_error,
+                "not_saved"
+            )
 
 train()
