@@ -164,15 +164,15 @@ def train():
             error = target - prediction
             total_error += abs(error)
 
-            step = clamp(error // 256, -2, 2)
+            learning_rate = 0.00001
 
             for h in range(HIDDEN_SIZE):
                 if activated[h] > 0:
-                    output_weights[h] += step
+                    output_weights[h] += round(learning_rate * error * activated[h])
 
-            output_bias += step * SCALE
+            output_bias += round(learning_rate * error * SCALE)
 
-        train_error = total_error // max(1, len(train_data))
+            train_error = total_error // max(1, len(train_data))
 
         validation_error = average_error(
             validation_data,
