@@ -64,6 +64,37 @@ def save_network(path, input_weights, hidden_bias, output_weights, output_bias):
 
         f.write(struct.pack("<i", output_bias))
 
+def load_network(path):
+    with open(path, "rb") as f:
+        magic = f.read(8)
+        if magic != b"DNNUE001":
+            raise ValueError("bad NNUE magic")
+
+        input_size = struct.unpack("<i", f.read(4))[0]
+        hidden_size = struct.unpack("<i", f.read(4))[0]
+
+        if input_size != INPUT_SIZE or hidden_size != HIDDEN_SIZE:
+            raise ValueError("bad NNUE size")
+
+        input_weights = [
+            struct.unpack("<h", f.read(2))[0]
+            for _ in range(INPUT_SIZE * HIDDEN_SIZE)
+        ]
+
+        hidden_bias = [
+            struct.unpack("<h", f.read(2))[0]
+            for _ in range(HIDDEN_SIZE)
+        ]
+
+        output_weights = [
+            struct.unpack("<h", f.read(2))[0]
+            for _ in range(HIDDEN_SIZE)
+        ]
+
+        output_bias = struct.unpack("<i", f.read(4))[0]
+
+    return input_weights, hidden_bias, output_weights, output_bias
+
 def load_data(path):
     data = []
 
@@ -82,10 +113,7 @@ def load_data(path):
 def train():
     data = load_data("lichess_big3_classical_training_data.txt")
 
-    input_weights = [random.randint(-2, 2) for _ in range(INPUT_SIZE * HIDDEN_SIZE)]
-    hidden_bias = [0 for _ in range(HIDDEN_SIZE)]
-    output_weights = [random.randint(-2, 2) for _ in range(HIDDEN_SIZE)]
-    output_bias = 0
+    input_weights, hidden_bias, output_weights, output_bias = load_network("../tiny_classical.dnnue")
 
     epochs = 5
 
@@ -115,6 +143,6 @@ def train():
 
         print("epoch", epoch + 1, "avg_error", total_error // max(1, len(data)))
 
-    save_network("tiny_classical.dnnue", input_weights, hidden_bias, output_weights, output_bias)
+    save_network("tiny_trained.dnnue", input_weights, hidden_bias, output_weights, output_bias)
 
 train()

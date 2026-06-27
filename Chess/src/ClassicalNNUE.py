@@ -33,10 +33,14 @@ def write_network(path):
     output_weights = [0 for _ in range(HIDDEN_SIZE)]
     output_bias = 0
 
-    # hidden[0] = white score / 16
-    # hidden[1] = black score / 16
+    # hidden[0] = white positive
+    # hidden[1] = white negative
+    # hidden[2] = black positive
+    # hidden[3] = black negative
     output_weights[0] = FEATURE_SCALE * SCALE
     output_weights[1] = -FEATURE_SCALE * SCALE
+    output_weights[2] = -FEATURE_SCALE * SCALE
+    output_weights[3] = FEATURE_SCALE * SCALE
 
     for piece in range(12):
         for square in range(64):
@@ -44,10 +48,18 @@ def write_network(path):
             value = PIECE_VALUES[piece] + pst_value(piece, square)
             scaled = round(value / FEATURE_SCALE)
 
+            base = feature * HIDDEN_SIZE
+
             if piece < 6:
-                input_weights[feature * HIDDEN_SIZE + 0] = scaled
+                if scaled >= 0:
+                    input_weights[base + 0] = scaled
+                else:
+                    input_weights[base + 1] = -scaled
             else:
-                input_weights[feature * HIDDEN_SIZE + 1] = scaled
+                if scaled >= 0:
+                    input_weights[base + 2] = scaled
+                else:
+                    input_weights[base + 3] = -scaled
 
     with open(path, "wb") as f:
         f.write(b"DNNUE001")
