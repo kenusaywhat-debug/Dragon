@@ -190,8 +190,8 @@ def train():
                     input_weights[index] += input_delta
                     input_weights[index] = clamp(input_weights[index], -32768, 32767)
 
-                output_bias += round(bias_learning_rate * error * SCALE)
-                output_bias = clamp(output_bias, -2000000, 2000000)   
+            output_bias += round(bias_learning_rate * error * SCALE)
+            output_bias = clamp(output_bias, -2000000, 2000000)   
 
         train_error = total_error // max(1, len(train_data))
 
