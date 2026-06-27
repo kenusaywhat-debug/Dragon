@@ -164,15 +164,36 @@ def train():
             error = target - prediction
             total_error += abs(error)
 
-            learning_rate = 0.00001
+        output_learning_rate = 0.000005
+        input_learning_rate = 0.000001
+        bias_learning_rate = 0.000005
 
-            for h in range(HIDDEN_SIZE):
-                if activated[h] > 0:
-                    output_weights[h] += round(learning_rate * error * activated[h])
+        old_output_weights = output_weights[:]
 
-            output_bias += round(learning_rate * error * SCALE)
+        for h in range(HIDDEN_SIZE):
+            if activated[h] <= 0 or activated[h] >= 255:
+                continue
 
-            train_error = total_error // max(1, len(train_data))
+            output_delta = round(output_learning_rate * error * activated[h])
+            output_weights[h] += output_delta
+            output_weights[h] = clamp(output_weights[h], -32768, 32767)
+
+            hidden_error = error * old_output_weights[h]
+
+            input_delta = round(input_learning_rate * hidden_error)
+
+            if input_delta == 0:
+                continue
+
+            for feature in features:
+                index = feature * HIDDEN_SIZE + h
+                input_weights[index] += input_delta
+                input_weights[index] = clamp(input_weights[index], -32768, 32767)
+
+        output_bias += round(bias_learning_rate * error * SCALE)
+        output_bias = clamp(output_bias, -2000000, 2000000)   
+
+        train_error = total_error // max(1, len(train_data))
 
         validation_error = average_error(
             validation_data,
