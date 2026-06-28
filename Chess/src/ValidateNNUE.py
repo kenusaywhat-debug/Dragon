@@ -100,8 +100,8 @@ def validate(network_path, data_path, limit):
                 worst = (fen, target, prediction, error)
 
     print("positions", count)
-    print("avg_abs_error", total_abs_error // max(1, count))
-    print("avg_signed_error", total_signed_error // max(1, count))
+    print("avg_abs_error", round(total_abs_error / max(1, count), 3))
+    print("avg_signed_error", round(total_signed_error / max(1, count), 3))
     print("max_error", max_error)
 
     if worst:

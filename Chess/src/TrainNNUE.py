@@ -146,6 +146,16 @@ def train():
 
     print("baseline validation_error", round(best_error, 3))
 
+    # Hidden neurons 0-3 are the classical eval backbone. Train only 4-127 as a correction layer.
+    for feature in range(INPUT_SIZE):
+        base = feature * HIDDEN_SIZE
+        for h in range(4, HIDDEN_SIZE):
+            input_weights[base + h] = random.randint(-1, 1)
+
+    for h in range(4, HIDDEN_SIZE):
+        hidden_bias[h] = 0
+        output_weights[h] = random.randint(-1, 1)
+
     epochs = 5
 
     for epoch in range(epochs):
@@ -165,13 +175,13 @@ def train():
             error = target - prediction
             total_error += abs(error)
 
-            output_learning_rate = 0.0
+            output_learning_rate = 0.00001
             input_learning_rate = 0.00000005
             bias_learning_rate = 0.0
 
             old_output_weights = output_weights[:]
 
-            for h in range(HIDDEN_SIZE):
+            for h in range(4, HIDDEN_SIZE):
                 if activated[h] <= 0 or activated[h] >= 255:
                     continue
 
@@ -181,18 +191,13 @@ def train():
 
                 hidden_error = error * old_output_weights[h] / SCALE
 
-                input_delta = round(input_learning_rate * hidden_error)
-
                 raw_input_delta = input_learning_rate * hidden_error
                 input_delta = round(raw_input_delta)
 
                 if input_delta == 0:
-                    if raw_input_delta > 0:
-                        input_delta = 1
-                    elif raw_input_delta < 0:
-                        input_delta = -1
-                    else:
-                        continue
+                    continue
+
+                input_updates += len(features)
 
                 for feature in features:
                     index = feature * HIDDEN_SIZE + h
