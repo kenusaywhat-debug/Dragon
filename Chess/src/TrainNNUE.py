@@ -165,7 +165,7 @@ def train():
             total_error += abs(error)
 
             output_learning_rate = 0.0
-            input_learning_rate = 0.00000005
+            input_learning_rate = 0.000001
             bias_learning_rate = 0.0
 
             old_output_weights = output_weights[:]
