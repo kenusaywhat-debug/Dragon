@@ -124,7 +124,7 @@ def average_error(data, input_weights, hidden_bias, output_weights, output_bias)
 
         total_error += abs(target - prediction)
 
-    return total_error // max(1, len(data))
+    return total_error / max(1, len(data))
 
 def train():
     data = load_data("lichess_big3_classical_training_data.txt")
@@ -144,7 +144,7 @@ def train():
         output_bias
     )
 
-    print("baseline validation_error", best_error)
+    print("baseline validation_error", round(best_error, 3))
 
     epochs = 5
 
@@ -165,7 +165,7 @@ def train():
             total_error += abs(error)
 
             output_learning_rate = 0.0
-            input_learning_rate = 0.000001
+            input_learning_rate = 0.000005
             bias_learning_rate = 0.0
 
             old_output_weights = output_weights[:]
@@ -193,7 +193,7 @@ def train():
             output_bias += round(bias_learning_rate * error * SCALE)
             output_bias = clamp(output_bias, -2000000, 2000000)   
 
-        train_error = total_error // max(1, len(train_data))
+        train_error = total_error / max(1, len(train_data))
 
         validation_error = average_error(
             validation_data,
@@ -208,15 +208,15 @@ def train():
             save_network("tiny_trained.dnnue", input_weights, hidden_bias, output_weights, output_bias)
             print(
                 "epoch", epoch + 1,
-                "train_error", train_error,
-                "validation_error", validation_error,
+                "train_error", round(train_error, 3),
+                "validation_error", round(validation_error, 3),
                 "saved"
             )
         else:
             print(
                 "epoch", epoch + 1,
-                "train_error", train_error,
-                "validation_error", validation_error,
+                "train_error", round(train_error, 3),
+                "validation_error", round(validation_error, 3),
                 "not_saved"
             )
 
