@@ -151,6 +151,7 @@ def train():
     for epoch in range(epochs):
         random.shuffle(train_data)
         total_error = 0
+        input_updates = 0
 
         for features, target in train_data:
             prediction, hidden, activated = forward(
@@ -165,7 +166,7 @@ def train():
             total_error += abs(error)
 
             output_learning_rate = 0.0
-            input_learning_rate = 0.000005
+            input_learning_rate = 0.00000005
             bias_learning_rate = 0.0
 
             old_output_weights = output_weights[:]
@@ -182,8 +183,16 @@ def train():
 
                 input_delta = round(input_learning_rate * hidden_error)
 
+                raw_input_delta = input_learning_rate * hidden_error
+                input_delta = round(raw_input_delta)
+
                 if input_delta == 0:
-                    continue
+                    if raw_input_delta > 0:
+                        input_delta = 1
+                    elif raw_input_delta < 0:
+                        input_delta = -1
+                    else:
+                        continue
 
                 for feature in features:
                     index = feature * HIDDEN_SIZE + h
@@ -210,6 +219,7 @@ def train():
                 "epoch", epoch + 1,
                 "train_error", round(train_error, 3),
                 "validation_error", round(validation_error, 3),
+                "input_updates", input_updates,
                 "saved"
             )
         else:
@@ -217,6 +227,7 @@ def train():
                 "epoch", epoch + 1,
                 "train_error", round(train_error, 3),
                 "validation_error", round(validation_error, 3),
+                "input_updates", input_updates,
                 "not_saved"
             )
 
