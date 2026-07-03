@@ -156,7 +156,7 @@ def train():
         hidden_bias[h] = 0
         output_weights[h] = random.randint(-1, 1)
 
-    epochs = 5
+    epochs = 1
 
     for epoch in range(epochs):
         random.shuffle(train_data)
@@ -175,7 +175,7 @@ def train():
             error = target - prediction
             total_error += abs(error)
 
-            output_learning_rate = 0.00001
+            output_learning_rate = 0.00005
             input_learning_rate = 0.00000005
             bias_learning_rate = 0.0
 
