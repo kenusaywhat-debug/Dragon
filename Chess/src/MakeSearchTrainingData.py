@@ -53,6 +53,10 @@ def main():
             line = read_until(engine, "searcheval")
             score = int(line.split()[1])
 
+            side_to_move = fen.split()[1]
+            if side_to_move == "b":
+                score = -score
+
             score = max(-1000, min(1000, score))
 
             out.write(f"{fen}|{score}\n")
