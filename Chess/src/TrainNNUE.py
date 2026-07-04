@@ -177,7 +177,7 @@ def train():
             total_error += abs(error)
 
             output_learning_rate = 0.00005
-            input_learning_rate = 0.00000005
+            input_learning_rate = 0.000001
             bias_learning_rate = 0.0
 
             old_output_weights = output_weights[:]
@@ -193,7 +193,12 @@ def train():
                 hidden_error = error * old_output_weights[h] / SCALE
 
                 raw_input_delta = input_learning_rate * hidden_error
-                input_delta = round(raw_input_delta)
+                if raw_input_delta > 0:
+                    input_delta = 1
+                elif raw_input_delta < 0:
+                    input_delta = -1
+                else:
+                    continue
 
                 if input_delta == 0:
                     continue
