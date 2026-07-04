@@ -137,6 +137,8 @@ class MoveEngine
 
 		Move firstLegalMove(Chessboard& board);
 
+		int drawScore(Chessboard& board);
+
 
 
 };
