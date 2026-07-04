@@ -56,6 +56,8 @@ class MoveEngine
 
 		Evaluator evaluator;
 
+		const int DRAW_COMTEMPT = 15;
+
 		// minimax search function
 		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
 
@@ -72,9 +74,7 @@ class MoveEngine
 		bool isNoisyMove(Chessboard& board, const Move& move);
 		
 		bool shouldStop();
-
-		Move firstLegalMove(Chessboard& board);
-
+		
 		TTEntry* probeTT(uint64_t key);
 
 		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
@@ -134,6 +134,9 @@ class MoveEngine
 		bool isNNUELoaded();
 
 		string getNNUEPath();
+
+		Move firstLegalMove(Chessboard& board);
+
 
 
 };

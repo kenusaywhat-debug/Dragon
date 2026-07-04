@@ -20,13 +20,21 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	Move bestMove = {0, 0, EMPTY};
 	
 	// check for terminal states
-	int terminal = board.isTerminal();
+	int terminal = board.isTerminal();	
 
 	if (terminal)
 	{
-		if (terminal == DRAW) return 0;
+		if (terminal == DRAW)
+		{ 
+			int eval = evaluator.evaluateSTM(board);
+
+			if(eval >= -25)
+			{
+				return -DRAW_COMTEMPT; // return a small negative score for a draw
+			}
+		}
 		
-		return -1000000 + ply; // return a large negative score for a loss, scaled by the depth of the loss
+		return 0;
 	}
 
 	// depth limit
@@ -444,14 +452,27 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 		SearchResult result = searchRoot(board, depth);
 		best = result.move;
 
-		cout << "info depth " << depth
-		<< " score cp " << result.score
-		<< " nodes " << result.nodes
-		<< " tthits " << getTTHits()
-		<< " ttcuts " << getTTCuts()
-		<< " ttstores " << getTTStores()
-		<< " pv " << moveToString(result.move)
-		<< endl;
+		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
+		{
+			cout << "info depth " << depth
+				<< " score cp " << result.score
+				<< " nodes " << result.nodes
+				<< " tthits " << getTTHits()
+				<< " ttcuts " << getTTCuts()
+				<< " ttstores " << getTTStores()
+				<< endl;
+		}
+		else
+		{
+			cout << "info depth " << depth
+				<< " score cp " << result.score
+				<< " nodes " << result.nodes
+				<< " tthits " << getTTHits()
+				<< " ttcuts " << getTTCuts()
+				<< " ttstores " << getTTStores()
+				<< " pv " << moveToString(result.move)
+				<< endl;
+		}
 	}
 
 	return best;
@@ -473,14 +494,27 @@ Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
 
 		best = result.move;
 
-		cout << "info depth " << depth
-		<< " score cp " << result.score
-		<< " nodes " << result.nodes
-		<< " tthits " << getTTHits()
-		<< " ttcuts " << getTTCuts()
-		<< " ttstores " << getTTStores()
-		<< " pv " << moveToString(result.move)
-		<< endl;
+		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
+		{
+			cout << "info depth " << depth
+				<< " score cp " << result.score
+				<< " nodes " << result.nodes
+				<< " tthits " << getTTHits()
+				<< " ttcuts " << getTTCuts()
+				<< " ttstores " << getTTStores()
+				<< endl;
+		}
+		else
+		{
+			cout << "info depth " << depth
+				<< " score cp " << result.score
+				<< " nodes " << result.nodes
+				<< " tthits " << getTTHits()
+				<< " ttcuts " << getTTCuts()
+				<< " ttstores " << getTTStores()
+				<< " pv " << moveToString(result.move)
+				<< endl;
+		}
 
 	}
 	useTimeLimit = false;

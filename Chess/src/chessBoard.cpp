@@ -592,14 +592,14 @@ bool Chessboard::softDraw()
 
 	// repetition
 	int n = 0;
-	for (int i = stackIndex - 1; i >= 0; --i)
+	for (int i = stackIndex - 2; i >= 0; i -= 2)
 	{
 		if (stateStack[stackIndex].hash == stateStack[i].hash)
 		{
-			++n;
-			if (n > 1) return true;
+			n++;	
+			return n >= 2;		
 		}
-	}
+	}	
 
 	// insufficient material
 	if (stateStack[stackIndex].bitboards[WHITE_PAWN] || stateStack[stackIndex].bitboards[BLACK_PAWN] ||

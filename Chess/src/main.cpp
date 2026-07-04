@@ -3,6 +3,7 @@
 #include <sstream>
 #include "chessBoard.h"
 #include "moveEngine.h"
+#include <cctype>
 
 using namespace std;
 
@@ -118,9 +119,11 @@ void UCI()
 				move.to = x2 + 8 * y2;
 				move.promotion = EMPTY;
 
+				char promo = static_cast<char>(tolower(moveString[4]));
+
 				if (moveString.length() > 4)
 				{
-					switch (moveString[4])
+					switch (promo)
 					{
 					case 'q':
 						move.promotion = game.turn() == WHITE ? WHITE_QUEEN : BLACK_QUEEN;
@@ -194,17 +197,19 @@ void UCI()
 
 			// print the move to the console
 
-			if(bestMove.from == 0 && bestMove.to == 0 && bestMove.promotion == EMPTY && game.isTerminal())
+			if (bestMove.from == 0 && bestMove.to == 0 && bestMove.promotion == EMPTY)
+			{
+				bestMove = moveEngine.firstLegalMove(game);
+			}
+
+			if (bestMove.from == 0 && bestMove.to == 0 && bestMove.promotion == EMPTY)
 			{
 				cout << "bestmove 0000\n";
-				continue;
 			}
 			else
 			{
-				// store the move in a string
 				string moveString = moveEngine.moveToString(bestMove);
-				cout << "bestmove " + moveString + "\n";
-				continue;
+				cout << "bestmove " << moveString << "\n";
 			}
 		}
 			
