@@ -139,6 +139,8 @@ class MoveEngine
 
 		int drawScore(Chessboard& board);
 
+		int repeatMoveScore(Chessboard& board);
+
 
 
 };

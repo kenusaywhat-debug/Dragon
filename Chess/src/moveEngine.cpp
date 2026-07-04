@@ -101,7 +101,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			
 			if(board.repetitionCount() >= 1)
 			{
-				score = -drawScore(board);
+				score = repeatMoveScore(board);
 			}
 			else
 			{
@@ -210,7 +210,7 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 
 			if (board.repetitionCount() >= 1)
 			{
-				score = -drawScore(board);
+				score = repeatMoveScore(board);
 			}
 			else
 			{
@@ -247,6 +247,18 @@ int MoveEngine::drawScore(Chessboard& board)
 	}
 
 	return 0; // return 0 for a draw
+}
+
+int MoveEngine::repeatMoveScore(Chessboard& board)
+{
+    int evalForSideThatMoved = -evaluator.evaluateSTM(board);
+
+    if (evalForSideThatMoved >= -25)
+    {
+        return -DRAW_CONTEMPT;
+    }
+
+    return 0;
 }
 
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth)
