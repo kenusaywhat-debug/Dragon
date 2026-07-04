@@ -26,14 +26,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	{
 		if (terminal == DRAW)
 		{ 
-			int eval = evaluator.evaluateSTM(board);
-
-			if(eval >= -25)
-			{
-				return -DRAW_CONTEMPT; // return a small negative score for a draw
-			}
-
-			return 0; // return 0 for a draw
+			return drawScore(board); // return a small negative score for a draw
 		}
 		
 		return -1000000 + ply; // return a large negative score for a loss, scaled by the depth of the loss
@@ -106,18 +99,9 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			// if the move is legal, score it and update best score
 			int score;
 			
-			if(board.repetitionCount() >=1)
+			if(board.repetitionCount() >= 1)
 			{
-				int eval = evaluator.evaluateSTM(board);
-
-				if(eval >= -25)
-				{
-					score = -DRAW_CONTEMPT; // return a small negative score for a draw
-				}
-				else
-				{
-					score = 0; // return 0 for a draw
-				}
+				score = -drawScore(board);
 			}
 			else
 			{
@@ -222,7 +206,16 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 		{
 			foundLegal = true;
 
-			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
+			int score;
+
+			if (board.repetitionCount() >= 1)
+			{
+				score = -drawScore(board);
+			}
+			else
+			{
+				score = -negamax(board, depth - 1, -beta, -alpha, 1);
+			}
 
 			if(stopSearch) {board.undo(); break; }
 
@@ -242,6 +235,18 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 	}
 
 	return {bestMove, bestScore, nodesSearched};
+}
+
+int MoveEngine::drawScore(Chessboard& board)
+{
+	int eval = evaluator.evaluateSTM(board);
+
+	if (eval >= -25)
+	{
+		return -DRAW_CONTEMPT; // return a small negative score for a draw
+	}
+
+	return 0; // return 0 for a draw
 }
 
 int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth)
