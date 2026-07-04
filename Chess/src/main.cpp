@@ -65,8 +65,24 @@ void UCI()
 			if (command.find("UseNNUE") != string::npos)
 			{
 				bool enabled = command.find("true") != string::npos;
-				moveEngine.setUseNNUE(enabled);
+				moveEngine.setUseNNUE(true);
 				moveEngine.clearTT();
+
+				if (!moveEngine.isNNUELoaded())
+				{
+					if (moveEngine.loadNNUE("..\\..\\tiny_trained.dnnue"))
+					{
+						cout << "info string NNUE enabled and loaded default tiny_trained.dnnue\n";
+					}
+					else
+					{
+						cout << "info string NNUE enabled but default NNUE load failed\n";
+					}
+				}
+				else
+				{
+					cout << "info string NNUE enabled and already loaded\n";
+				}
 			}
 		}
 		if (command.substr(0, 7) == "isready")

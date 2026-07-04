@@ -1,6 +1,6 @@
 import subprocess
 
-ENGINE = r"..\build\Debug\dragon_engineV2.29.exe"
+ENGINE = r"..\build\Debug\dragon_engineV3.0.exe"
 INPUT_FENS = "natural_fens.txt"
 OUTPUT_DATA = "search_training_data.txt"
 DEPTH = 3
