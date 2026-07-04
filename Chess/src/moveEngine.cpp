@@ -104,8 +104,25 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		if (isMoveLegalAfterMove(board))
 		{
 			// if the move is legal, score it and update best score
-			int score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
-			//if (score > bestScore) bestScore = score;
+			int score;
+			
+			if(board.repetitionCount() >=1)
+			{
+				int eval = evaluator.evaluateSTM(board);
+
+				if(eval >= -25)
+				{
+					score = -DRAW_CONTEMPT; // return a small negative score for a draw
+				}
+				else
+				{
+					score = 0; // return 0 for a draw
+				}
+			}
+			else
+			{
+				score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
+			}
 
 			//if(debugMode) log.log("Move: " + moveToString(scoredMoves[i].move) + " Scored: " + to_string(score) + " Depth: " + to_string(depth) + " Nodes: " + to_string(nodesSearched));
 			if (score > bestScore)

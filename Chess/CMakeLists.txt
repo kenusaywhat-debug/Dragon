@@ -8,4 +8,4 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 include_directories(include)
 
-add_executable(dragon_engineV2.27 src/main.cpp src/chessBoard.cpp src/moveEngine.cpp src/logger.cpp src/PieceSquare.cpp src/Perft.cpp src/NNUE.cpp src/Evaluator.cpp)
+add_executable(dragon_engineV2.28 src/main.cpp src/chessBoard.cpp src/moveEngine.cpp src/logger.cpp src/PieceSquare.cpp src/Perft.cpp src/NNUE.cpp src/Evaluator.cpp)

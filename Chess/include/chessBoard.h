@@ -125,6 +125,8 @@ public:
 
 	int pieceAt(std::uint8_t square);
 
+	int repetitionCount();
+
 	// default constructor
 	Chessboard();
 

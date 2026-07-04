@@ -615,6 +615,18 @@ bool Chessboard::softDraw()
 	return false;
 }
 
+int Chessboard::repetitionCount()
+{
+	int count = 0;
+	uint64_t currentHash = stateStack[stackIndex].hash;
+
+	for (int i = stackIndex - 2; i >= 0; i -= 2)
+	{
+		if (currentHash == stateStack[i].hash) count++;
+	}
+	return count;
+}
+
 uint8_t Chessboard::isTerminal()
 {
 	// check for easy draws

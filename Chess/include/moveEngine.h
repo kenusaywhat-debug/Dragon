@@ -56,7 +56,7 @@ class MoveEngine
 
 		Evaluator evaluator;
 
-		const int DRAW_CONTEMPT = 15;
+		const int DRAW_CONTEMPT = 25;
 
 		// minimax search function
 		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
