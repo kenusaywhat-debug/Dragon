@@ -279,6 +279,19 @@ void UCI()
 				cout << "info string NNUE load failed " << path  << endl;
 			}
 		}
+		if(command.substr(0, 10) == "searcheval")
+		{
+			int depth = 3;
+
+			if (command.size() > 11)
+			{
+				depth = stoi(command.substr(11));
+			}
+
+			SearchResult result = moveEngine.searchRoot(game, depth);
+
+			cout << "searcheval " << result.score << endl;
+		}
 
 	}
 }

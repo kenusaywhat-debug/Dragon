@@ -105,7 +105,7 @@ def load_data(path):
                 continue
 
             fen, score = line.rsplit("|", 1)
-            target = clamp(int(score), -1000, 1000)
+            target = max(-1000, min(1000, int(score)))
             data.append((features_from_fen(fen), target))
 
     return data
@@ -127,7 +127,7 @@ def average_error(data, input_weights, hidden_bias, output_weights, output_bias)
     return total_error / max(1, len(data))
 
 def train():
-    data = load_data("lichess_big3_classical_training_data.txt")
+    data = load_data("search_training_data.txt")
     random.seed(1)
     random.shuffle(data)
 
