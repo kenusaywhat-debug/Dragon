@@ -32,6 +32,8 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			{
 				return -DRAW_CONTEMPT; // return a small negative score for a draw
 			}
+
+			return 0; // return 0 for a draw
 		}
 		
 		return -1000000 + ply; // return a large negative score for a loss, scaled by the depth of the loss

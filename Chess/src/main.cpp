@@ -121,7 +121,7 @@ void UCI()
 
 				if (moveString.length() > 4)
 				{
-					char promo = static_cast<char>(tolower(moveString[4]));
+					char promo = static_cast<char>(tolower(static_cast<unsigned char>(moveString[4])));
 
 					switch (promo)
 					{
