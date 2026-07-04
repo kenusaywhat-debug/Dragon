@@ -128,6 +128,7 @@ def average_error(data, input_weights, hidden_bias, output_weights, output_bias)
 
 def train():
     data = load_data("lichess_big3_classical_training_data.txt")
+    random.seed(1)
     random.shuffle(data)
 
     split = int(len(data) * 0.9)
