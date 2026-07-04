@@ -1,7 +1,7 @@
 import subprocess
 
-ENGINE = r"..\build\Debug\dragon_engineV2.26.exe"
-INPUT_FENS = "lichess_big3_classical_training_data.txt"
+ENGINE = r"..\build\Debug\dragon_engineV2.29.exe"
+INPUT_FENS = "natural_fens.txt"
 OUTPUT_DATA = "search_training_data.txt"
 DEPTH = 3
 LIMIT = 50000

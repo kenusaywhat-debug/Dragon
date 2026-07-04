@@ -79,6 +79,10 @@ class MoveEngine
 
 		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
 
+		int drawScore(Chessboard& board);
+
+		int repeatMoveScore(Chessboard& board);
+
 	public:
 
 		static const int MAX_DEPTH = 64;
@@ -136,11 +140,4 @@ class MoveEngine
 		string getNNUEPath();
 
 		Move firstLegalMove(Chessboard& board);
-
-		int drawScore(Chessboard& board);
-
-		int repeatMoveScore(Chessboard& board);
-
-
-
 };
