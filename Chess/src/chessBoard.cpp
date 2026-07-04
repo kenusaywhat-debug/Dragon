@@ -597,7 +597,7 @@ bool Chessboard::softDraw()
 		if (stateStack[stackIndex].hash == stateStack[i].hash)
 		{
 			n++;	
-			return n >= 2;		
+			if (n >= 2) return true;		
 		}
 	}	
 

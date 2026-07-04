@@ -119,10 +119,10 @@ void UCI()
 				move.to = x2 + 8 * y2;
 				move.promotion = EMPTY;
 
-				char promo = static_cast<char>(tolower(moveString[4]));
-
 				if (moveString.length() > 4)
 				{
+					char promo = static_cast<char>(tolower(moveString[4]));
+
 					switch (promo)
 					{
 					case 'q':
