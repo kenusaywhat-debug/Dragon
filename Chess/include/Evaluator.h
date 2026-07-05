@@ -10,6 +10,9 @@ private:
 	bool useNNUE = false;
 	NNUE nnue;
 
+	int basicMateEndgameBonus(Chessboard& board);
+	int mateNetBonus(int strongKing, int weakKing);
+
 public:
 	int classical(Chessboard& board);
 	int classicalSTM(Chessboard& board);

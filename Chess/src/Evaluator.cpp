@@ -67,7 +67,11 @@ int Evaluator::nnueSTM(Chessboard& board)
 
 int Evaluator::evaluateWhite(Chessboard& board)
 {
-	return useNNUE ? nnueEval(board) : classical(board);
+	int score = useNNUE ? nnueEval(board) : classical(board);
+
+	score += basicMateEndgameBonus(board);
+
+	return score;
 }
 
 int Evaluator::evaluateSTM(Chessboard& board)
@@ -100,4 +104,56 @@ bool Evaluator::isNNUELoaded() const
 std::string Evaluator::getNNUEPath() const
 {
 	return nnue.getNetworkPath();
+}
+
+int Evaluator::basicMateEndgameBonus(Chessboard& board)
+{
+	uint64_t* bb = board.getState()->bitboards;
+
+	int whiteMaterial =
+		popcount(bb[WHITE_QUEEN]) * 900 +
+		popcount(bb[WHITE_ROOK]) * 500 +
+		popcount(bb[WHITE_BISHOP]) * 300 + 
+		popcount(bb[WHITE_KNIGHT]) * 300 +
+		popcount(bb[ WHITE_PAWN]) * 100;
+
+	int blackMaterial =
+		popcount(bb[BLACK_QUEEN]) * 900 +
+		popcount(bb[BLACK_ROOK]) * 500 +
+		popcount(bb[BLACK_BISHOP]) * 300 + 
+		popcount(bb[BLACK_KNIGHT]) * 300 +
+		popcount(bb[BLACK_PAWN]) * 100;
+
+	bool whiteHasMateMaterial = whiteMaterial >= 500;
+	bool blackHasMateMaterial = blackMaterial >= 500;
+
+	if (whiteHasMateMaterial && blackMaterial == 0)
+	{
+		return mateNetBonus(board.whiteKingSquare(), board.blackKingSquare());
+	}
+	
+	if (blackHasMateMaterial && whiteMaterial == 0)
+	{
+		return -mateNetBonus(board.blackKingSquare(), board.whiteKingSquare());
+	}
+
+	return 0;
+}
+
+int Evaluator::mateNetBonus(int strongKing, int weakKing)
+{
+	int weakFile = weakKing % 8;
+	int weakRank = weakKing / 8;
+
+	int fileEdge = max(weakFile, 7 - weakFile);
+	int rankEdge = max(weakRank, 7 - weakRank);
+	int edgeBonus = max(fileEdge, rankEdge) * 20;
+
+	int strongFile = strongKing % 8;
+	int strongRank = strongKing / 8;
+
+	int kingDistance = abs(strongFile - weakFile) + abs(strongRank - weakRank);
+	int kingBonus = (14 - kingDistance) * 10;
+
+	return edgeBonus + kingBonus;
 }
