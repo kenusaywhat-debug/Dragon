@@ -33,58 +33,7 @@ struct TTEntry
 
 class MoveEngine
 {
-	private:
-		std::uint64_t nodesSearched;
-
-		int movePly;
-
-		bool stopSearch = false;
-
-		bool useTimeLimit = false;
-
-		chrono::steady_clock::time_point searchDeadline;
-
-		static const int TT_SIZE = 1 <<20;
-
-		vector<TTEntry> transpositionTable;
-
-		uint64_t ttHits = 0;
-
-		uint64_t ttCuts = 0;
-
-		uint64_t ttStores = 0;
-
-		Evaluator evaluator;
-
-		const int DRAW_CONTEMPT = 25;
-
-		// minimax search function
-		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
-
-		int scoreMove(Chessboard& board, Move move, int ply, Move ttMove);
-
-		bool sameMove(const Move& a, const Move& b);
-
-		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply, Move ttMove);
-
-		int quiescence(Chessboard& board, int alpha, int beta, int qDepth, int ply);
-
-		bool isMoveLegalAfterMove(Chessboard& board);
-
-		bool isNoisyMove(Chessboard& board, const Move& move);
-		
-		bool shouldStop();
-		
-		TTEntry* probeTT(uint64_t key);
-
-		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
-
-		int drawScore(Chessboard& board);
-
-		int repeatMoveScore(Chessboard& board);
-
 	public:
-
 		static const int MAX_DEPTH = 64;
 
 		Move killerMoves[MAX_DEPTH][2];
@@ -140,4 +89,60 @@ class MoveEngine
 		string getNNUEPath();
 
 		Move firstLegalMove(Chessboard& board);
+
+	private:
+		std::uint64_t nodesSearched;
+
+		int movePly;
+
+		bool stopSearch = false;
+
+		bool useTimeLimit = false;
+
+		chrono::steady_clock::time_point searchDeadline;
+
+		static const int TT_SIZE = 1 <<20;
+
+		vector<TTEntry> transpositionTable;
+
+		uint64_t ttHits = 0;
+
+		uint64_t ttCuts = 0;
+
+		uint64_t ttStores = 0;
+
+		Evaluator evaluator;
+
+		const int DRAW_CONTEMPT = 25;
+
+		static constexpr int MATE_SCORE = 100000;
+		static constexpr int MATE_THRESHOLD = MATE_SCORE - MAX_DEPTH;
+
+		static int scoreToTT(int score, int ply);
+		static int scoreFromTT(int score, int ply);
+
+		// minimax search function
+		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
+
+		int scoreMove(Chessboard& board, Move move, int ply, Move ttMove);
+
+		bool sameMove(const Move& a, const Move& b);
+
+		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply, Move ttMove);
+
+		int quiescence(Chessboard& board, int alpha, int beta, int qDepth, int ply);
+
+		bool isMoveLegalAfterMove(Chessboard& board);
+
+		bool isNoisyMove(Chessboard& board, const Move& move);
+		
+		bool shouldStop();
+		
+		TTEntry* probeTT(uint64_t key);
+
+		void storeTT(uint64_t key, int depth, int score, TTFlag flag, Move bestMove); 
+
+		int drawScore(Chessboard& board);
+
+		int repeatMoveScore(Chessboard& board);	
 };

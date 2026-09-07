@@ -29,7 +29,13 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			return 0; // return a small negative score for a draw
 		}
 		
-		return -100000 + ply; // return a large negative score for a loss, scaled by the depth of the loss
+		return -MATE_SCORE + ply; // return a large negative score for a loss, scaled by the depth of the loss
+	}
+
+	if(ply >= MAX_DEPTH)
+	{
+		stopSearch = true;
+		return 0;
 	}
 
 	// depth limit
@@ -54,24 +60,26 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 		if (entry->depth >= depth)
 		{
+			int ttScore = scoreFromTT(entry->score, ply);
+
 			if(entry->flag == TT_EXACT)
 			{
 				++ttCuts;
-				return entry->score;
+				return ttScore;
 			}
 			else if (entry->flag == TT_LOWERBOUND)
 			{
-				alpha = max(alpha, entry->score);
+				alpha = max(alpha, ttScore);
 			}
 			else if (entry->flag == TT_UPPERBOUND)
 			{
-				beta = min(beta, entry->score);
+				beta = min(beta, ttScore);
 			}
 
 			if (alpha >= beta)
 			{
 				++ttCuts;
-				return entry->score;
+				return ttScore;
 			}
 		}		
 	}
@@ -147,7 +155,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		flag = TT_LOWERBOUND;
 	}
 
-	storeTT(key, depth, bestScore, flag, bestMove);
+	storeTT(key, depth, scoreToTT(bestScore, ply), flag, bestMove);
 	return bestScore;	
 }
 
@@ -315,7 +323,7 @@ int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth, i
     if (terminal)
     {
         if (terminal == DRAW) return 0;
-        return -100000 + ply;
+        return -MATE_SCORE + ply;
     }
 
     bool inCheck = board.turn() == WHITE ? board.isAttacked(board.whiteKingSquare(), BLACK)
@@ -598,6 +606,20 @@ Move MoveEngine::firstLegalMove(Chessboard& board)
 	}
 
 	return{0, 0, EMPTY};
+}
+
+int MoveEngine::scoreToTT(int score, int ply)
+{
+	if (score >= MATE_THRESHOLD) return score + ply;	
+	if (score <= -MATE_THRESHOLD) return score - ply;
+	return score;	
+}
+
+int MoveEngine::scoreFromTT(int score, int ply)
+{
+	if (score >= MATE_THRESHOLD) return score - ply;	
+	if (score <= -MATE_THRESHOLD) return score + ply;
+	return score;	
 }
 
 TTEntry* MoveEngine::probeTT(uint64_t key)
