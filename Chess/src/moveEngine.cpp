@@ -159,8 +159,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	return bestScore;	
 }
 
-int MoveEngine::scoreMove(
-    Chessboard& board, Move move, int ply, Move ttMove)
+int MoveEngine::scoreMove(Chessboard& board, Move move, int ply, Move ttMove)
 {
     int score = 0;
 
@@ -198,21 +197,7 @@ int MoveEngine::scoreMove(
 
         score += 10000 + 10 * victimValue - attackerValue;
     }
-
-    board.move(move);
-
-    bool givesCheck =
-        board.turn() == WHITE
-        ? board.isAttacked(board.whiteKingSquare(), BLACK)
-        : board.isAttacked(board.blackKingSquare(), WHITE);
-
-    if (givesCheck)
-    {
-        score += 5000;
-    }
-
-    board.undo();
-
+    
     return score;
 }
 
