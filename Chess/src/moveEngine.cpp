@@ -26,7 +26,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	{
 		if (terminal == DRAW)
 		{ 
-			return drawScore(board); // return a small negative score for a draw
+			return 0; // return a small negative score for a draw
 		}
 		
 		return -100000 + ply; // return a large negative score for a loss, scaled by the depth of the loss
@@ -97,16 +97,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		if (isMoveLegalAfterMove(board))
 		{
 			// if the move is legal, score it and update best score
-			int score;
-			
-			if(board.repetitionCount() >= 1)
-			{
-				score = repeatMoveScore(board);
-			}
-			else
-			{
-				score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
-			}
+			int	score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
 
 			if(stopSearch) {board.undo(); return 0; }
 
@@ -265,16 +256,7 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 		{
 			foundLegal = true;
 
-			int score;
-
-			if (board.repetitionCount() >= 1)
-			{
-				score = repeatMoveScore(board);
-			}
-			else
-			{
-				score = -negamax(board, depth - 1, -beta, -alpha, 1);
-			}
+			int score = -negamax(board, depth - 1, -beta, -alpha, 1);
 
 			if(stopSearch) {board.undo(); break; }
 

@@ -602,14 +602,27 @@ bool Chessboard::softDraw()
 	}	
 
 	// insufficient material
-	if (stateStack[stackIndex].bitboards[WHITE_PAWN] || stateStack[stackIndex].bitboards[BLACK_PAWN] ||
-		stateStack[stackIndex].bitboards[WHITE_ROOK] || stateStack[stackIndex].bitboards[BLACK_ROOK] ||
-		stateStack[stackIndex].bitboards[WHITE_QUEEN] || stateStack[stackIndex].bitboards[BLACK_QUEEN]) return false;
-	uint64_t white_bb = stateStack[stackIndex].bitboards[WHITE_BISHOP] | stateStack[stackIndex].bitboards[WHITE_KNIGHT];
-	white_bb &= white_bb - 1;
-	uint64_t black_bb = stateStack[stackIndex].bitboards[BLACK_BISHOP] | stateStack[stackIndex].bitboards[BLACK_KNIGHT];
-	black_bb &= black_bb - 1;
-	if (white_bb == 0 && black_bb == 0) return true;
+	const auto& bb = stateStack[stackIndex].bitboards;
+
+	if (bb[WHITE_PAWN] || bb[BLACK_PAWN] || bb[WHITE_ROOK] || bb[BLACK_ROOK] || bb[WHITE_QUEEN] || bb[BLACK_QUEEN]) return false;
+
+	uint64_t bishops = bb[WHITE_BISHOP] | bb[BLACK_BISHOP];
+
+	uint64_t knights = bb[WHITE_KNIGHT] | bb[BLACK_KNIGHT];
+
+	uint64_t minors = bishops | knights;
+
+	if (minors == 0) return true; // king vs king
+
+	//Exactty one minor piece total:
+	//king+bishop or king+knight vs king
+	if ((minors & (minors - 1)) == 0) return true;
+
+	if (knights == 0) // only bishops
+	{
+		// if all bishops are on the same color, then it is a draw
+		if ((bishops & 0x55aa55aa55aa55aaULL) == 0 || (bishops & 0xaa55aa55aa55aa55ULL) == 0) return true;
+	}
 
 	// if no draws are found, then return false
 	return false;
@@ -629,12 +642,9 @@ int Chessboard::repetitionCount()
 
 uint8_t Chessboard::isTerminal()
 {
-	// check for easy draws
-	if (softDraw()) return DRAW;
-
 	// generate pseudo-moves
 	Move moves[218];
-	int numMoves;
+	int numMoves = 0;
 	pseudoMoves(moves, numMoves);
 
 	// check all pseudoMoves to see if any are legal
@@ -644,14 +654,16 @@ uint8_t Chessboard::isTerminal()
 		bool illegal = turn() == WHITE ? isAttacked(blackKingSquare(), WHITE) : isAttacked(whiteKingSquare(), BLACK);
 		undo();
 
-		// if a legal move is found, then the state is not terminal
-		if (!illegal) return 0;
+		// A legal move exists; check for a draw.
+		if (!illegal) return softDraw() ? DRAW : 0;
 	}
 
 	// if there are no legal moves, then the state is terminal.
-	if (isAttacked(blackKingSquare(), WHITE)) return WHITE;
-	if (isAttacked(whiteKingSquare(), BLACK)) return BLACK;
-	return DRAW;
+	bool inCheck = turn() == WHITE ? isAttacked(whiteKingSquare(), BLACK) : isAttacked(blackKingSquare(), WHITE);
+
+	if (inCheck) return turn() == WHITE ? BLACK : WHITE;
+
+	return DRAW; //Stalemate
 }
 
 void Chessboard::setPosition(string fen)
