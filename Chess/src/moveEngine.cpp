@@ -222,7 +222,7 @@ Move MoveEngine::bestMove(Chessboard& board, int depth)
 	return searchRoot(board, depth).move;
 }
 
-SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
+SearchResult MoveEngine::searchRoot(Chessboard& board, int depth, Move previousBest)
 {
 	nodesSearched = 0;
 
@@ -251,6 +251,23 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 	}
 
 	generateOrderedMoves(board, scoredMoves, numMoves, 0, ttMove);
+
+	for (int i = 0; i < numMoves; ++i)
+	{
+		if (sameMove(scoredMoves[i].move, previousBest))
+		{
+			ScoreMove preferred = scoredMoves[i];
+
+			//Preserve the ordering of the remaining moves.
+			for(int j = i; j > 0; --j)
+			{
+				scoredMoves[j] = scoredMoves[j - 1];
+			}
+
+			scoredMoves[0] = preferred;
+			break;
+		}
+	}
 
 	bool foundLegal = false;
 
@@ -488,6 +505,7 @@ bool MoveEngine::isNoisyMove(Chessboard& board, const Move& move)
 Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 {
 	Move best = firstLegalMove(board);
+	Move previousBest = {0, 0, EMPTY};
 
 	stopSearch = false;
 
@@ -498,11 +516,12 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 
 	for (int depth = 1; depth <= maxDepth; ++depth)
 	{		
-		SearchResult result = searchRoot(board, depth);
+		SearchResult result = searchRoot(board, depth, previousBest);
 
 		if (stopSearch){break;}
 
 		best = result.move;
+		previousBest = result.move;
 
 		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
 		{
@@ -537,14 +556,16 @@ Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
 	searchDeadline = chrono::steady_clock::now() + chrono::milliseconds(milliseconds);
 
 	Move best = firstLegalMove(board);
+	Move previousBest = {0, 0, EMPTY};
 
 	for(int depth = 1; depth <= MAX_DEPTH; ++depth )
 	{
-		SearchResult result = searchRoot(board, depth);
+		SearchResult result = searchRoot(board, depth, previousBest);
 
 		if (stopSearch){break;}
 
 		best = result.move;
+		previousBest = result.move;
 
 		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
 		{

@@ -52,7 +52,7 @@ class MoveEngine
 
 		Move iterativeDeepeningTimed(Chessboard& board, int milliseconds);
 
-		SearchResult searchRoot(Chessboard& board, int depth);
+		SearchResult searchRoot(Chessboard& board, int depth, Move previousBest = Move{0,0,EMPTY});
 
 		uint64_t getTTHits(){return ttHits;}
 
