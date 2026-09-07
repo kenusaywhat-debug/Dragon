@@ -17,34 +17,31 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 	++nodesSearched;
 
-	Move bestMove = {0, 0, EMPTY};
-	
-	// check for terminal states
-	int terminal = board.isTerminal();	
-
-	if (terminal)
-	{
-		if (terminal == DRAW)
-		{ 
-			return 0; // return a small negative score for a draw
-		}
-		
-		return -MATE_SCORE + ply; // return a large negative score for a loss, scaled by the depth of the loss
-	}
-
-	if(ply >= MAX_DEPTH)
-	{
-		stopSearch = true;
-		return 0;
-	}
-
-	// depth limit
 	if (depth <= 0)
 	{
 		return quiescence(board, alpha, beta, 4, ply);
-	} 
+	}
 
-	//Logger log("scoreMoves2.txt");
+	// Exceptional cases: preserve checkmate-before-draw handling,
+	// and recognize terminal positions at the maximum ply.
+
+	if (board.softDraw() || ply >= MAX_DEPTH)
+	{
+		int terminal = board.isTerminal();
+
+		if (terminal)
+		{
+			return terminal == DRAW ? 0 : -MATE_SCORE + ply;
+		}
+
+		if(ply >= MAX_DEPTH)
+		{
+			stopSearch = true;
+			return 0;
+		}
+	}
+
+	Move bestMove = {0, 0, EMPTY};
 
 	uint64_t key = board.ttKey();
 	int alphaOriginal = alpha;
@@ -92,6 +89,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	
 	// if it is white's turn, try to maximize the score
 	int bestScore = -1000000;
+	int legalMoves = 0;
 
 	// loop through all moves
 	for (int i = 0; i < numMoves; ++i)
@@ -101,9 +99,13 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		bool isCapture = board.pieceAt(move.to) != EMPTY;
 
 		board.move(move);
+
+		
 		
 		if (isMoveLegalAfterMove(board))
 		{
+			++legalMoves;
+
 			// if the move is legal, score it and update best score
 			int	score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
 
@@ -142,6 +144,14 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 		{
 			return alpha;
 		}			
+	}
+
+	if(legalMoves == 0)
+	{
+		bool inCheck = board.turn() == WHITE ? board.isAttacked(board.whiteKingSquare(), BLACK)
+			: board.isAttacked(board.blackKingSquare(), WHITE);
+
+		return inCheck ? -MATE_SCORE + ply : 0; // checkmate or stalemate
 	}
 
 	TTFlag flag = TT_EXACT;
@@ -492,6 +502,9 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 	Move best = firstLegalMove(board);
 	Move previousBest = {0, 0, EMPTY};
 
+	auto searchStart = chrono::steady_clock::now();
+	uint64_t totalNodes = 0;
+
 	stopSearch = false;
 
 	if(maxDepth <= 0)
@@ -503,32 +516,29 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 	{		
 		SearchResult result = searchRoot(board, depth, previousBest);
 
+		totalNodes += result.nodes;
+
 		if (stopSearch){break;}
 
 		best = result.move;
 		previousBest = result.move;
 
-		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
-		{
-			cout << "info depth " << depth
-				<< " score cp " << result.score
-				<< " nodes " << result.nodes
-				<< " tthits " << getTTHits()
-				<< " ttcuts " << getTTCuts()
-				<< " ttstores " << getTTStores()
-				<< endl;
-		}
-		else
-		{
-			cout << "info depth " << depth
-				<< " score cp " << result.score
-				<< " nodes " << result.nodes
-				<< " tthits " << getTTHits()
-				<< " ttcuts " << getTTCuts()
-				<< " ttstores " << getTTStores()
-				<< " pv " << moveToString(result.move)
-				<< endl;
-		}
+		auto elapsedMs = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - searchStart).count();
+
+		uint64_t nps = elapsedMs > 0 ? totalNodes * 1000 / static_cast<uint64_t>(elapsedMs) : 0;
+
+		cout << "info depth " << depth
+			<< " score cp " << result.score
+			<< " time " << elapsedMs
+			<< " nodes " << totalNodes
+			<< " nps " << nps;
+
+			if (!(result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY))
+			{
+				cout << " pv " << moveToString(result.move);
+			}
+
+		cout << endl;
 	}
 
 	return best;
@@ -543,38 +553,39 @@ Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
 	Move best = firstLegalMove(board);
 	Move previousBest = {0, 0, EMPTY};
 
+	auto searchStart = chrono::steady_clock::now();
+	uint64_t totalNodes = 0;
+
 	for(int depth = 1; depth <= MAX_DEPTH; ++depth )
 	{
 		SearchResult result = searchRoot(board, depth, previousBest);
+
+		totalNodes += result.nodes;
 
 		if (stopSearch){break;}
 
 		best = result.move;
 		previousBest = result.move;
 
-		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
-		{
-			cout << "info depth " << depth
-				<< " score cp " << result.score
-				<< " nodes " << result.nodes
-				<< " tthits " << getTTHits()
-				<< " ttcuts " << getTTCuts()
-				<< " ttstores " << getTTStores()
-				<< endl;
-		}
-		else
-		{
-			cout << "info depth " << depth
-				<< " score cp " << result.score
-				<< " nodes " << result.nodes
-				<< " tthits " << getTTHits()
-				<< " ttcuts " << getTTCuts()
-				<< " ttstores " << getTTStores()
-				<< " pv " << moveToString(result.move)
-				<< endl;
-		}
+		auto elapsedMs = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - searchStart).count();
+
+		uint64_t nps = elapsedMs > 0 ? totalNodes * 1000 / static_cast<uint64_t>(elapsedMs) : 0;
+
+		cout << "info depth " << depth
+     		<< " score cp " << result.score
+     		<< " time " << elapsedMs
+     		<< " nodes " << totalNodes
+     		<< " nps " << nps;
+
+			if (!(result.move.from == 0 &&  result.move.to == 0 && result.move.promotion == EMPTY))
+			{
+				cout << " pv " << moveToString(result.move);
+			}
+
+		cout << endl;
 
 	}
+
 	useTimeLimit = false;
 	return best;
 }
