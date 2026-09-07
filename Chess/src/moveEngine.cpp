@@ -46,7 +46,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 	//Logger log("scoreMoves2.txt");
 
-	uint64_t key = board.getState()->hash;
+	uint64_t key = board.ttKey();
 	int alphaOriginal = alpha;
 
 	Move ttMove = {0, 0, EMPTY};
@@ -243,7 +243,7 @@ SearchResult MoveEngine::searchRoot(Chessboard& board, int depth)
 
 	Move ttMove = {0, 0, EMPTY};
 
-	TTEntry* entry = probeTT(board.getState()->hash);
+	TTEntry* entry = probeTT(board.ttKey());
 
 	if (entry != nullptr)
 	{

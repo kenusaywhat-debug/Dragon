@@ -92,6 +92,8 @@ public:
 	// zobrist hashing function
 	std::uint64_t hash();
 
+	std::uint64_t ttKey() const;
+
 	// methods to get and set pieces
 	std::uint8_t getPiece(std::uint8_t square);
 	void setPiece(std::uint8_t piece, std::uint8_t square);

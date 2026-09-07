@@ -32,6 +32,36 @@ uint64_t Chessboard::hash()
 	return hash;
 }
 
+uint64_t Chessboard::ttKey() const
+{
+	//Mix a value into a 64-bit hash
+	auto mix = [](uint64_t value) -> uint64_t
+	{
+		value += 0x9e3779b97f4a7c15ULL;
+		value = (value ^ (value >> 30 )) * 0xbf58476d1ce4e5b9ULL;
+		value = (value ^ (value >> 27 )) * 0x94d049bb133111ebULL;
+		return value ^ (value >> 31);
+	};
+
+	const auto& current = stateStack[stackIndex];
+
+	//The halfmove counter offects procimity to a draw. 
+	uint64_t key = mix(static_cast<int>(current.halfMoves));
+
+	// Positions before the last pawn move or capture cannot contribute to a future repetition.
+    int first = stackIndex - static_cast<int>(current.halfMoves);
+	if (first < 0 ) first = 0; 
+
+	// Include the available history in order, including the current position.
+
+	for ( int i = first; i <= stackIndex; ++i)
+	{
+		key = mix(key ^ stateStack[i].hash);
+	}
+	
+	return key;
+}
+
 uint8_t Chessboard::getPiece(uint8_t square)
 {
 	uint64_t mask = uint64_t(1) << square;
