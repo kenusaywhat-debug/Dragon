@@ -29,13 +29,13 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			return drawScore(board); // return a small negative score for a draw
 		}
 		
-		return -1000000 + ply; // return a large negative score for a loss, scaled by the depth of the loss
+		return -100000 + ply; // return a large negative score for a loss, scaled by the depth of the loss
 	}
 
 	// depth limit
 	if (depth <= 0)
 	{
-		return quiescence(board, alpha, beta, 4);
+		return quiescence(board, alpha, beta, 4, ply);
 	} 
 
 	//Logger log("scoreMoves2.txt");
@@ -108,6 +108,8 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 				score = -negamax(board, depth - 1, -beta, -alpha, ply + 1);
 			}
 
+			if(stopSearch) {board.undo(); return 0; }
+
 			//if(debugMode) log.log("Move: " + moveToString(scoredMoves[i].move) + " Scored: " + to_string(score) + " Depth: " + to_string(depth) + " Nodes: " + to_string(nodesSearched));
 			if (score > bestScore)
 			{
@@ -156,6 +158,63 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 
 	storeTT(key, depth, bestScore, flag, bestMove);
 	return bestScore;	
+}
+
+int MoveEngine::scoreMove(
+    Chessboard& board, Move move, int ply, Move ttMove)
+{
+    int score = 0;
+
+    bool hasTTMove =
+        !(ttMove.from == 0 &&
+          ttMove.to == 0 &&
+          ttMove.promotion == EMPTY);
+
+    if (hasTTMove && sameMove(move, ttMove))
+    {
+        score += 30000;
+    }
+
+    if (sameMove(move, killerMoves[ply][0]))
+    {
+        score += 9000;
+    }
+    else if (sameMove(move, killerMoves[ply][1]))
+    {
+        score += 8000;
+    }
+
+    if (move.promotion != EMPTY)
+    {
+        score += 20000;
+    }
+
+    int captured = board.pieceAt(move.to);
+
+    if (captured != EMPTY)
+    {
+        int victimValue = capturePieceValues[captured];
+        int attackerValue =
+            capturePieceValues[board.pieceAt(move.from)];
+
+        score += 10000 + 10 * victimValue - attackerValue;
+    }
+
+    board.move(move);
+
+    bool givesCheck =
+        board.turn() == WHITE
+        ? board.isAttacked(board.whiteKingSquare(), BLACK)
+        : board.isAttacked(board.blackKingSquare(), WHITE);
+
+    if (givesCheck)
+    {
+        score += 5000;
+    }
+
+    board.undo();
+
+    return score;
 }
 
 // function to find the best move in a given position
@@ -261,111 +320,75 @@ int MoveEngine::repeatMoveScore(Chessboard& board)
     return 0;
 }
 
-int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth)
+int MoveEngine::quiescence(Chessboard& board, int alpha, int beta, int qDepth, int ply)
 {
-	
-	if (qDepth <= 0){ return evaluator.evaluateSTM(board);}
+    if (shouldStop()) return 0;
 
-	if (shouldStop()){ return evaluator.evaluateSTM(board);}
+    ++nodesSearched;
 
-	++nodesSearched;
-	
-	int standPat = evaluator.evaluateSTM(board);
+    // Keep terminal detection here for correctness first.
+    // We can remove duplicate move generation later.
+    int terminal = board.isTerminal();
 
-	if (standPat >= beta) return beta;
-	if (alpha < standPat) alpha = standPat;
+    if (terminal)
+    {
+        if (terminal == DRAW) return 0;
+        return -100000 + ply;
+    }
 
-	// generate capture moves
-	Move moves[218];
-	int numMoves = 0;
-	board.pseudoMoves(moves, numMoves);
+    bool inCheck = board.turn() == WHITE ? board.isAttacked(board.whiteKingSquare(), BLACK)
+        : board.isAttacked(board.blackKingSquare(), WHITE);
 
-	for (int i = 0; i < numMoves; ++i)
-	{
-		Move move = moves[i];
+    // Emergency recursion guard: discard this iteration rather
+    // than treating a checked position as a normal evaluation.
+    if (ply >= MAX_DEPTH)
+    {
+        stopSearch = true;
+        return 0;
+    }
 
-		if(!isNoisyMove(board, move)){continue;} // skip quiet moves
-		
-		board.move(move);		
+    if (!inCheck)
+    {
+        int standPat = evaluator.evaluateSTM(board);
 
-		if (isMoveLegalAfterMove(board))
-		{
-			int score = -quiescence(board, -beta, -alpha, qDepth -1);
-			board.undo();
+        if (qDepth <= 0) return standPat;
 
-			if(stopSearch){ return alpha;}
+        if (standPat >= beta) return beta;
+        alpha = max(alpha, standPat);
+    }
 
-			if (score >= beta) return beta;
-			if (score > alpha) alpha = score;
-		}
-		else
-		{
-			board.undo();
-			if(stopSearch){ return alpha;}
+    Move moves[218];
+    int numMoves = 0;
+    board.pseudoMoves(moves, numMoves);
 
-		}		
-	}
+    for (int i = 0; i < numMoves; ++i)
+    {
+        Move move = moves[i];
 
-	return alpha;
-}
+        // In check, quiet evasions must be searched too.
+        if (!inCheck && !isNoisyMove(board, move))
+            continue;
 
-uint64_t MoveEngine::getNodesSearched()
-{
-	return nodesSearched;
-}
+        board.move(move);
 
-int MoveEngine::scoreMove(Chessboard& board, Move move, int ply, Move ttMove)
-{
-	int score = 0;
-	//Logger log("scoreMoves2.txt");
+        if (!isMoveLegalAfterMove(board))
+        {
+            board.undo();
+            continue;
+        }
 
-	bool hasTTMove = !(ttMove.from == 0 && ttMove.to == 0 && ttMove.promotion == EMPTY);
+        int score = -quiescence(
+            board, -beta, -alpha, qDepth - 1, ply + 1);
 
-	if(hasTTMove && sameMove(move, ttMove))
-	{
-		score += 30000;
-	}
+        board.undo();
 
-	if(sameMove(move, killerMoves[ply][0]))
-	{
-		score += 9000;
-		//if(debugMode) log.log("Move: " + moveToString(move) + " is a killer move");
-	}
-	else if(sameMove(move, killerMoves[ply][1]))
-	{
-		score += 8000;
-		//if(debugMode) log.log("Move: " + moveToString(move) + " is a second-choice killer move");
-	}
+        if (stopSearch) return 0;
 
-	if(move.promotion != EMPTY)
-	{			
-		score += 20000;// add a bonus for promotion
-		//if(debugMode) log.log("Move: " + moveToString(move) + " is a promotion move");
-	}	
+        if (score >= beta) return beta;
+        alpha = max(alpha, score);
+    }
 
-	int captured = board.pieceAt(move.to);	
-
-	if (captured != EMPTY)
-	{
-		int victimValue = capturePieceValues[captured];
-		int attackerValue = capturePieceValues[board.pieceAt(move.from)];
-
-		score += 10000 + ((10 * victimValue) - attackerValue); // add a bonus for captures, scaled by the value of the captured piece and the attacking piece
-		//if(debugMode) log.log("Move: " + moveToString(move) + " is a capture move");
-
-	}
-
-	board.move(move);
-
-	if ((board.isAttacked(board.whiteKingSquare(), BLACK) && board.turn() == WHITE) || (board.isAttacked(board.blackKingSquare(), WHITE) && board.turn() == BLACK))
-	{
-		score += 5000; // add a bonus for putting the opponent in check
-		//if(debugMode) log.log("Move: " + moveToString(move) + " puts the opponent in check");
-	}
-
-	board.undo();
-
-	return score;
+    return alpha;
 }
 
 bool MoveEngine::sameMove(const Move& a, const Move& b)
@@ -474,7 +497,7 @@ bool MoveEngine::isNoisyMove(Chessboard& board, const Move& move)
 
 Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 {
-	Move best = {0, 0, EMPTY};
+	Move best = firstLegalMove(board);
 
 	stopSearch = false;
 
@@ -486,6 +509,9 @@ Move MoveEngine::iterativeDeepening(Chessboard& board, int maxDepth)
 	for (int depth = 1; depth <= maxDepth; ++depth)
 	{		
 		SearchResult result = searchRoot(board, depth);
+
+		if (stopSearch){break;}
+
 		best = result.move;
 
 		if (result.move.from == 0 && result.move.to == 0 && result.move.promotion == EMPTY)
@@ -559,12 +585,11 @@ Move MoveEngine::iterativeDeepeningTimed(Chessboard& board, int milliseconds)
 
 bool MoveEngine::shouldStop()
 {
-	if (!useTimeLimit) { return false;}
+	if (stopSearch) { return true;}
 
-	if (chrono::steady_clock::now() >= searchDeadline)
+	if (useTimeLimit && chrono::steady_clock::now() >= searchDeadline)
 	{
 		stopSearch = true;
-		return true;
 	}
 
 	return stopSearch;

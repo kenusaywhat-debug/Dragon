@@ -1,6 +1,10 @@
 #include "Evaluator.h"
 #include "PieceSquare.h"
 #include "bitops.h"
+#include <algorithm>
+#include <cstdlib>
+
+using namespace std;
 
 const int evaluatorPieceValues[] =
 {
@@ -109,6 +113,7 @@ std::string Evaluator::getNNUEPath() const
 int Evaluator::basicMateEndgameBonus(Chessboard& board)
 {
 	uint64_t* bb = board.getState()->bitboards;
+	int attackerBonus = 0;
 
 	int whiteMaterial =
 		popcount(bb[WHITE_QUEEN]) * 900 +
@@ -124,20 +129,57 @@ int Evaluator::basicMateEndgameBonus(Chessboard& board)
 		popcount(bb[BLACK_KNIGHT]) * 300 +
 		popcount(bb[BLACK_PAWN]) * 100;
 
-	bool whiteHasMateMaterial = whiteMaterial >= 500;
-	bool blackHasMateMaterial = blackMaterial >= 500;
+	
+	bool whiteHasMateMaterial =
+    bb[WHITE_QUEEN] || bb[WHITE_ROOK] ||
+    (bb[WHITE_BISHOP] && bb[WHITE_KNIGHT]);
+
+	bool blackHasMateMaterial =
+    bb[BLACK_QUEEN] || bb[BLACK_ROOK] ||
+    (bb[BLACK_BISHOP] && bb[BLACK_KNIGHT]);
 
 	if (whiteHasMateMaterial && blackMaterial == 0)
 	{
-		return mateNetBonus(board.whiteKingSquare(), board.blackKingSquare());
+		attackerBonus = heavyPieceMateBonus(board, WHITE_QUEEN, WHITE_ROOK, board.blackKingSquare());
+		return mateNetBonus(board.whiteKingSquare(), board.blackKingSquare()) + attackerBonus;
 	}
 	
 	if (blackHasMateMaterial && whiteMaterial == 0)
 	{
-		return -mateNetBonus(board.blackKingSquare(), board.whiteKingSquare());
+		attackerBonus = heavyPieceMateBonus(board, BLACK_QUEEN, BLACK_ROOK, board.whiteKingSquare());
+		return -mateNetBonus(board.blackKingSquare(), board.whiteKingSquare()) + attackerBonus;
 	}
 
 	return 0;
+}
+
+int Evaluator::heavyPieceMateBonus(Chessboard& board, int queenPiece, int rookPiece, int weakKing)
+{
+	uint64_t* bb = board.getState()->bitboards;
+	
+	uint64_t heavyPieces = bb[queenPiece] | bb[rookPiece];
+
+	if(!heavyPieces) return 0;
+
+	int best= 0;
+
+	while(heavyPieces)
+	{
+		int square = lsbIndex(heavyPieces);
+
+		int file = square % 8;
+		int rank = square / 8;
+		int weakFile = weakKing % 8;
+		int weakRank = weakKing / 8;
+
+		int distance = abs(file - weakFile) + abs(rank - weakRank);
+
+		best = max(best, (14 - distance) * 10);
+
+		heavyPieces &= heavyPieces - 1;
+	}
+
+	return best;	
 }
 
 int Evaluator::mateNetBonus(int strongKing, int weakKing)
@@ -147,13 +189,13 @@ int Evaluator::mateNetBonus(int strongKing, int weakKing)
 
 	int fileEdge = max(weakFile, 7 - weakFile);
 	int rankEdge = max(weakRank, 7 - weakRank);
-	int edgeBonus = max(fileEdge, rankEdge) * 20;
+	int edgeBonus = max(fileEdge, rankEdge) * 50;
 
 	int strongFile = strongKing % 8;
 	int strongRank = strongKing / 8;
 
 	int kingDistance = abs(strongFile - weakFile) + abs(strongRank - weakRank);
-	int kingBonus = (14 - kingDistance) * 10;
+	int kingBonus = (14 - kingDistance) * 20;
 
 	return edgeBonus + kingBonus;
 }

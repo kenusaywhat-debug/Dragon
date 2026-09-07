@@ -67,7 +67,7 @@ class MoveEngine
 
 		void generateOrderedMoves(Chessboard& board, ScoreMove scoredMoves[], int& numMoves, int ply, Move ttMove);
 
-		int quiescence(Chessboard& board, int alpha, int beta, int qDepth);
+		int quiescence(Chessboard& board, int alpha, int beta, int qDepth, int ply);
 
 		bool isMoveLegalAfterMove(Chessboard& board);
 
@@ -93,7 +93,7 @@ class MoveEngine
 		Move bestMove(Chessboard& board, int depth);
 
 		// returns the number of nodes searched during the last bestMove call
-		uint64_t getNodesSearched();
+		uint64_t getNodesSearched() { return nodesSearched; }
 
 		string moveToString(const Move& move);
 

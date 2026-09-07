@@ -11,7 +11,9 @@ private:
 	NNUE nnue;
 
 	int basicMateEndgameBonus(Chessboard& board);
+	int heavyPieceMateBonus(Chessboard& board, int queenPiece, int rookPiece, int weakKing);
 	int mateNetBonus(int strongKing, int weakKing);
+
 
 public:
 	int classical(Chessboard& board);
