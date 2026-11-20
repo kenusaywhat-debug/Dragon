@@ -121,6 +121,8 @@ class MoveEngine
 		static int scoreToTT(int score, int ply);
 		static int scoreFromTT(int score, int ply);
 
+		int history [2][64][64] = {};
+
 		// minimax search function
 		int negamax(Chessboard& board, int depth, int alpha, int beta, int ply);
 
@@ -145,4 +147,6 @@ class MoveEngine
 		int drawScore(Chessboard& board);
 
 		int repeatMoveScore(Chessboard& board);	
+
+		void clearHistory();
 };

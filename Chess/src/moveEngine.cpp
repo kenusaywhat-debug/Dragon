@@ -96,11 +96,10 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 	{
 		Move move = scoredMoves[i].move;
 
-		bool isCapture = board.pieceAt(move.to) != EMPTY;
+		bool isQuiet = !isNoisyMove(board, move);
+		int side = board.turn() == WHITE ? 0 : 1;
 
-		board.move(move);
-
-		
+		board.move(move);		
 		
 		if (isMoveLegalAfterMove(board))
 		{
@@ -122,7 +121,7 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 			
 			if (beta <= alpha)
 			{
-				if (!isCapture)
+				if (isQuiet)
 				{
 					// if the move is a quiet move, add it to the killer move list
 					if (!sameMove(move, killerMoves[ply][0]))
@@ -130,6 +129,12 @@ int MoveEngine::negamax(Chessboard& board, int depth, int alpha, int beta, int p
 						killerMoves[ply][1] = killerMoves[ply][0];
 						killerMoves[ply][0] = move;							
 					}
+
+					int& value = history[side][move.from][move.to];
+
+					        // Reward deeper cutoffs, with diminishing increases.
+							int bonus = min(depth * depth, 400);
+							value += bonus - value * bonus / 4000;
 				}
 				board.undo();
 				break; // beta cut-off
@@ -173,24 +178,31 @@ int MoveEngine::scoreMove(Chessboard& board, Move move, int ply, Move ttMove)
 {
     int score = 0;
 
-    bool hasTTMove =
-        !(ttMove.from == 0 &&
-          ttMove.to == 0 &&
-          ttMove.promotion == EMPTY);
+	bool isQuiet = !isNoisyMove(board, move);
+
+    bool hasTTMove = !(ttMove.from == 0 && ttMove.to == 0 && ttMove.promotion == EMPTY);
 
     if (hasTTMove && sameMove(move, ttMove))
     {
         score += 30000;
     }
 
-    if (sameMove(move, killerMoves[ply][0]))
-    {
-        score += 9000;
-    }
-    else if (sameMove(move, killerMoves[ply][1]))
-    {
-        score += 8000;
-    }
+	if (isQuiet)
+	{
+		if (sameMove(move, killerMoves[ply][0]))
+		{
+			score += 9000;
+		}
+		else if (sameMove(move, killerMoves[ply][1]))
+		{
+			score += 8000;
+		}
+		else
+		{
+			int side = board.turn() == WHITE ? 0 : 1;
+			score += history[side][move.from][move.to];
+		}
+	}
 
     if (move.promotion != EMPTY)
     {
@@ -465,6 +477,7 @@ void MoveEngine::initMoveEngine()
 	}
 	
 	clearTT();
+	clearHistory();
 }
 
 bool MoveEngine::isMoveLegalAfterMove(Chessboard& board)
@@ -685,6 +698,7 @@ void MoveEngine::clearTT()
 void MoveEngine::newSearchGame()
 {
 	clearTT();
+	clearHistory();
 
 	Move invalidMove = {0, 0, EMPTY};
 
@@ -755,4 +769,12 @@ bool MoveEngine::isNNUELoaded()
 string MoveEngine::getNNUEPath()
 {
 	return evaluator.getNNUEPath();
+}
+
+void MoveEngine::clearHistory()
+{
+	for(auto& side : history)
+		for(auto& from : side)
+			for(int& value : from)
+			value = 0;
 }
