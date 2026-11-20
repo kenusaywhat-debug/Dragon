@@ -1,6 +1,6 @@
 #pragma once
 
-#include "chessboard.h"
+#include "chessBoard.h"
 #include "Evaluator.h"
 #include <chrono>
 #include <vector>
